@@ -1,0 +1,501 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+  Search,
+  ShoppingBasket,
+  UserRound,
+  Menu,
+  Shell,
+  Trash2,
+  Minus,
+  Plus,
+  ArrowRight,
+  X,
+} from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { CATEGORIES, PRODUCTS, getProduct } from "@/lib/products";
+import { imgFor } from "@/lib/images";
+import { formatFCFA } from "@/lib/format";
+import {
+  useShop,
+  cartCount,
+  cartSubtotal,
+  type Customer,
+} from "@/lib/store";
+import { SafeImg } from "./SafeImg";
+
+function Logo({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8842c]"
+      aria-label="Maison Cauris — retour à l'accueil"
+    >
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1b5e3f] text-white shadow-sm">
+        <Shell className="h-5.5 w-5.5" aria-hidden="true" />
+      </span>
+      <span className="flex flex-col leading-none">
+        <span className="text-lg font-extrabold tracking-tight text-[#1b5e3f]">
+          Maison Cauris
+        </span>
+        <span className="text-[11px] font-semibold text-[#b05f14]">
+          Maison · Cuisine · Bénin
+        </span>
+      </span>
+    </button>
+  );
+}
+
+export function Header() {
+  const view = useShop((s) => s.view);
+  const goHome = useShop((s) => s.goHome);
+  const openCatalog = useShop((s) => s.openCatalog);
+  const openProduct = useShop((s) => s.openProduct);
+  const searchQuery = useShop((s) => s.searchQuery);
+  const setSearch = useShop((s) => s.setSearch);
+  const cart = useShop((s) => s.cart);
+  const setQty = useShop((s) => s.setQty);
+  const removeFromCart = useShop((s) => s.removeFromCart);
+  const customer = useShop((s) => s.customer);
+  const setCustomer = useShop((s) => s.setCustomer);
+  const catalogCategory = useShop((s) => s.catalogCategory);
+
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [form, setForm] = useState<Customer>({
+    name: "",
+    phone: "",
+    email: "",
+  });
+  const count = cartCount(cart);
+  const subtotal = cartSubtotal(cart);
+
+  useEffect(() => {
+    if (customer) setForm(customer);
+  }, [customer]);
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    openCatalog("all");
+    // On garde la requête telle quelle ; le catalogue filtre dessus.
+    if (searchQuery.trim()) {
+      toast({
+        title: "Recherche lancée",
+        description: `Résultats pour « ${searchQuery.trim()} »`,
+      });
+    }
+  };
+
+  const saveAccount = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.phone.trim()) {
+      toast({
+        title: "Informations incomplètes",
+        description: "Renseignez au moins votre nom et votre téléphone.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setCustomer({ ...form });
+    setAccountOpen(false);
+    toast({
+      title: "Bienvenue !",
+      description: `Votre espace client est activé, ${form.name.split(" ")[0]}.`,
+    });
+  };
+
+  const navItems = [
+    { label: "Accueil", active: view === "home", action: () => goHome() },
+    ...CATEGORIES.map((c) => ({
+      label: c.name,
+      active: view === "catalog" && catalogCategory === c.id,
+      action: () => openCatalog(c.id),
+    })),
+  ];
+
+  return (
+    <header className="sticky top-0 z-40 border-b border-[#e6ddc9] bg-[#faf6ee]/95 backdrop-blur supports-[backdrop-filter]:bg-[#faf6ee]/85">
+      {/* Bandeau réassurance */}
+      <div className="hidden bg-[#123d29] px-4 py-1.5 text-center text-xs font-semibold text-[#efe7d6] sm:block">
+        Livraison à Cotonou sous 24–48 h · Paiement Mobile Money · Retours sous 5 jours
+      </div>
+
+      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-5">
+        <Logo onClick={goHome} />
+
+        {/* Recherche (desktop) */}
+        <form
+          onSubmit={submitSearch}
+          role="search"
+          className="relative ml-auto hidden flex-1 max-w-xl md:block"
+        >
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-[#8a9a86]"
+            aria-hidden="true"
+          />
+          <Input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher un produit : blender, marmite, bureau…"
+            aria-label="Rechercher un produit"
+            className="h-11 rounded-full border-[#d9cfba] bg-white pl-10 pr-4 text-sm shadow-sm focus-visible:ring-[#e8842c]"
+          />
+        </form>
+
+        {/* Compte client */}
+        <Dialog open={accountOpen} onOpenChange={setAccountOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="ghost"
+              className="hidden h-11 items-center gap-2 rounded-full px-4 text-sm font-bold text-[#21301f] hover:bg-[#efe7d6] sm:inline-flex"
+              aria-label={customer ? "Mon compte client" : "Se connecter / créer un compte"}
+            >
+              {customer ? (
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#1b5e3f] text-xs font-extrabold text-white">
+                  {customer.name.trim().charAt(0).toUpperCase()}
+                </span>
+              ) : (
+                <UserRound className="h-5 w-5" aria-hidden="true" />
+              )}
+              <span className="hidden lg:inline">
+                {customer ? customer.name.split(" ")[0] : "Mon compte"}
+              </span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-[#1b5e3f]">Espace client</DialogTitle>
+              <DialogDescription>
+                Renseignez vos coordonnées : elles prérempliront votre commande
+                et vous permettront de suivre vos achats.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={saveAccount} className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="acc-name">Nom complet *</Label>
+                <Input
+                  id="acc-name"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="Ex. Adjovi Marie"
+                  autoComplete="name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="acc-phone">Téléphone (WhatsApp) *</Label>
+                <Input
+                  id="acc-phone"
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="+229 01 97 00 00 00"
+                  autoComplete="tel"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="acc-email">E-mail (facultatif)</Label>
+                <Input
+                  id="acc-email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="vous@exemple.com"
+                  autoComplete="email"
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  type="submit"
+                  className="w-full rounded-full bg-[#1b5e3f] hover:bg-[#14503a]"
+                >
+                  Enregistrer mon profil
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Panier (aperçu latéral) */}
+        <Sheet open={cartOpen} onOpenChange={setCartOpen}>
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              className="relative inline-flex h-11 items-center gap-2 rounded-full bg-[#1b5e3f] px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#14503a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8842c]"
+              aria-label={`Ouvrir le panier (${count} article${count > 1 ? "s" : ""})`}
+              onClick={() => setCartOpen(true)}
+              data-testid="header-cart"
+            >
+              <ShoppingBasket className="h-5 w-5" aria-hidden="true" />
+              <span className="hidden sm:inline">Panier</span>
+              {count > 0 && (
+                <span
+                  className="absolute -right-1.5 -top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-[#e8842c] px-1 text-xs font-extrabold text-white shadow"
+                  aria-hidden="true"
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          </SheetTrigger>
+          <SheetContent
+            side="right"
+            className="flex w-full flex-col gap-0 border-[#e6ddc9] bg-[#faf6ee] p-0 sm:max-w-md"
+          >
+            <SheetHeader className="border-b border-[#e6ddc9] bg-[#faf6ee] p-5">
+              <SheetTitle className="flex items-center gap-2 text-[#1b5e3f]">
+                <ShoppingBasket className="h-5 w-5" aria-hidden="true" />
+                Mon panier ({count})
+              </SheetTitle>
+            </SheetHeader>
+
+            {cart.length === 0 ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#efe7d6]">
+                  <ShoppingBasket className="h-8 w-8 text-[#8a9a86]" aria-hidden="true" />
+                </span>
+                <p className="font-bold text-[#21301f]">Votre panier est vide</p>
+                <p className="text-sm text-muted-foreground">
+                  Parcourez nos catégories et ajoutez vos premiers produits utiles.
+                </p>
+                <Button
+                  className="mt-2 rounded-full bg-[#e8842c] hover:bg-[#d9741f]"
+                  onClick={() => {
+                    setCartOpen(false);
+                    openCatalog("all");
+                  }}
+                >
+                  Découvrir le catalogue
+                </Button>
+              </div>
+            ) : (
+              <>
+                <ScrollArea className="flex-1">
+                  <ul className="flex flex-col gap-3 p-4">
+                    {cart.map((line) => {
+                      const p = getProduct(line.productId);
+                      if (!p) return null;
+                      return (
+                        <li
+                          key={line.productId}
+                          className="flex gap-3 rounded-xl border border-[#e6ddc9] bg-white p-3"
+                        >
+                          <SafeImg
+                            src={imgFor(p.imageKeys[0])}
+                            alt={p.name}
+                            className="h-16 w-16 shrink-0 rounded-lg object-cover"
+                          />
+                          <div className="flex min-w-0 flex-1 flex-col">
+                            <button
+                              type="button"
+                              className="line-clamp-2 text-left text-sm font-bold leading-snug text-[#21301f] hover:underline"
+                              onClick={() => {
+                                setCartOpen(false);
+                                openProduct(p.id);
+                              }}
+                            >
+                              {p.name}
+                            </button>
+                            <p className="mt-0.5 text-sm font-extrabold text-[#1b5e3f]">
+                              {formatFCFA(p.price)}
+                            </p>
+                            <div className="mt-auto flex items-center justify-between pt-1">
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  aria-label={`Retirer un exemplaire de ${p.name}`}
+                                  className="flex h-7 w-7 items-center justify-center rounded-full border border-[#d9cfba] bg-white hover:bg-[#efe7d6]"
+                                  onClick={() => setQty(p.id, line.qty - 1)}
+                                >
+                                  <Minus className="h-3.5 w-3.5" aria-hidden="true" />
+                                </button>
+                                <span
+                                  className="min-w-6 text-center text-sm font-bold"
+                                  aria-label={`Quantité : ${line.qty}`}
+                                >
+                                  {line.qty}
+                                </span>
+                                <button
+                                  type="button"
+                                  aria-label={`Ajouter un exemplaire de ${p.name}`}
+                                  className="flex h-7 w-7 items-center justify-center rounded-full border border-[#d9cfba] bg-white hover:bg-[#efe7d6]"
+                                  onClick={() => setQty(p.id, line.qty + 1)}
+                                >
+                                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                                </button>
+                              </div>
+                              <button
+                                type="button"
+                                aria-label={`Retirer ${p.name} du panier`}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#c6482f] hover:bg-[#f8e2dc]"
+                                onClick={() => {
+                                  removeFromCart(p.id);
+                                  toast({
+                                    title: "Produit retiré",
+                                    description: p.name,
+                                  });
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" aria-hidden="true" />
+                              </button>
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </ScrollArea>
+
+                <div className="border-t border-[#e6ddc9] bg-white p-5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Sous-total</span>
+                    <span className="text-lg font-extrabold text-[#1b5e3f]">
+                      {formatFCFA(subtotal)}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Frais de livraison calculés à la commande. Livraison offerte
+                    dès 100 000 FCFA d&apos;achat.
+                  </p>
+                  <Button
+                    className="mt-3 h-12 w-full rounded-full bg-[#e8842c] text-base font-extrabold hover:bg-[#d9741f]"
+                    onClick={() => {
+                      setCartOpen(false);
+                      openCart();
+                    }}
+                  >
+                    Voir le panier et commander
+                    <ArrowRight className="h-5 w-5" aria-hidden="true" />
+                  </Button>
+                </div>
+              </>
+            )}
+          </SheetContent>
+        </Sheet>
+
+        {/* Menu mobile */}
+        <button
+          type="button"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d9cfba] bg-white text-[#21301f] md:hidden"
+          aria-label="Ouvrir le menu"
+          aria-expanded={mobileOpen}
+          onClick={() => setMobileOpen((v) => !v)}
+        >
+          {mobileOpen ? (
+            <X className="h-5 w-5" aria-hidden="true" />
+          ) : (
+            <Menu className="h-5 w-5" aria-hidden="true" />
+          )}
+        </button>
+      </div>
+
+      {/* Navigation catégories (desktop) */}
+      <nav
+        aria-label="Catégories"
+        className="hidden border-t border-[#efe7d6] md:block"
+      >
+        <div className="mx-auto flex max-w-7xl items-center gap-1 px-4 py-1.5">
+          {navItems.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={item.action}
+              aria-current={item.active ? "page" : undefined}
+              className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
+                item.active
+                  ? "bg-[#1b5e3f] text-white"
+                  : "text-[#21301f] hover:bg-[#efe7d6]"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+          <span className="ml-auto hidden items-center gap-2 text-xs font-semibold text-[#7a8a75] lg:flex">
+            <Separator orientation="vertical" className="h-4" />
+            {PRODUCTS.length} produits sélectionnés pour vous
+          </span>
+        </div>
+      </nav>
+
+      {/* Navigation mobile déroulante */}
+      {mobileOpen && (
+        <nav
+          aria-label="Menu mobile"
+          className="border-t border-[#e6ddc9] bg-[#faf6ee] px-4 pb-4 pt-2 md:hidden"
+        >
+          <form onSubmit={submitSearch} role="search" className="relative mb-2">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-[#8a9a86]"
+              aria-hidden="true"
+            />
+            <Input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher un produit…"
+              aria-label="Rechercher un produit"
+              className="h-11 rounded-full border-[#d9cfba] bg-white pl-10"
+            />
+          </form>
+          <ul className="flex flex-col gap-1">
+            {navItems.map((item) => (
+              <li key={item.label}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    item.action();
+                    setMobileOpen(false);
+                  }}
+                  className={`w-full rounded-xl px-4 py-3 text-left text-sm font-bold ${
+                    item.active
+                      ? "bg-[#1b5e3f] text-white"
+                      : "bg-white text-[#21301f]"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              </li>
+            ))}
+            <li>
+              <button
+                type="button"
+                onClick={() => {
+                  setAccountOpen(true);
+                  setMobileOpen(false);
+                }}
+                className="flex w-full items-center gap-2 rounded-xl bg-white px-4 py-3 text-left text-sm font-bold text-[#21301f]"
+              >
+                <UserRound className="h-5 w-5" aria-hidden="true" />
+                {customer ? "Mon compte" : "Se connecter / créer un compte"}
+              </button>
+            </li>
+          </ul>
+        </nav>
+      )}
+    </header>
+  );
+}
