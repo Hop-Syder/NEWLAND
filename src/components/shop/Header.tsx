@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Search,
   ShoppingBasket,
@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -82,6 +83,7 @@ export function Header() {
   const customer = useShop((s) => s.customer);
   const setCustomer = useShop((s) => s.setCustomer);
   const catalogCategory = useShop((s) => s.catalogCategory);
+  const openCart = useShop((s) => s.openCart);
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -94,9 +96,11 @@ export function Header() {
   const count = cartCount(cart);
   const subtotal = cartSubtotal(cart);
 
-  useEffect(() => {
-    if (customer) setForm(customer);
-  }, [customer]);
+  // Préremplissage au moment d'ouvrir le dialogue (pas d'effet nécessaire).
+  const openAccount = (open: boolean) => {
+    if (open && customer) setForm(customer);
+    setAccountOpen(open);
+  };
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,7 +172,7 @@ export function Header() {
         </form>
 
         {/* Compte client */}
-        <Dialog open={accountOpen} onOpenChange={setAccountOpen}>
+        <Dialog open={accountOpen} onOpenChange={openAccount}>
           <DialogTrigger asChild>
             <Button
               variant="ghost"
@@ -271,6 +275,9 @@ export function Header() {
                 <ShoppingBasket className="h-5 w-5" aria-hidden="true" />
                 Mon panier ({count})
               </SheetTitle>
+              <SheetDescription className="sr-only">
+                Aperçu des articles de votre panier, quantités et sous-total.
+              </SheetDescription>
             </SheetHeader>
 
             {cart.length === 0 ? (
@@ -484,7 +491,7 @@ export function Header() {
               <button
                 type="button"
                 onClick={() => {
-                  setAccountOpen(true);
+                  openAccount(true);
                   setMobileOpen(false);
                 }}
                 className="flex w-full items-center gap-2 rounded-xl bg-white px-4 py-3 text-left text-sm font-bold text-[#21301f]"

@@ -81,7 +81,7 @@ export function HomePage() {
               >
                 Équipez votre maison,{" "}
                 <span className="relative inline-block text-[#1b5e3f]">
-                  simplement
+                  simplement,
                   <svg
                     aria-hidden="true"
                     viewBox="0 0 200 12"
@@ -96,8 +96,8 @@ export function HomePage() {
                       fill="none"
                     />
                   </svg>
-                </span>
-                , du blender au bureau.
+                </span>{" "}
+                du blender au bureau.
               </h1>
             </Reveal>
 
@@ -161,7 +161,7 @@ export function HomePage() {
                   alt="Cuisine moderne et lumineuse, chaleureuse et bien équipée"
                   className="aspect-[4/3] w-full object-cover sm:aspect-[5/4] lg:aspect-[4/3]"
                 />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#123d29]/70 to-transparent p-4 pt-10">
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#123d29]/70 to-transparent p-4 pb-16 sm:pb-14 sm:pr-56">
                   <p className="text-sm font-bold text-white">
                     De vraies cuisines, de vrais produits — pensés pour le
                     quotidien.
@@ -170,7 +170,7 @@ export function HomePage() {
               </div>
 
               {/* carte flottante rassurante */}
-              <div className="absolute -bottom-5 left-4 hidden rounded-2xl border border-[#e6ddc9] bg-white/95 px-4 py-3 shadow-xl backdrop-blur sm:flex sm:items-center sm:gap-3">
+              <div className="absolute -bottom-6 right-4 hidden rounded-2xl border border-[#e6ddc9] bg-white/95 px-4 py-3 shadow-xl backdrop-blur sm:flex sm:items-center sm:gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e4efe4]">
                   <ShieldCheck className="h-5 w-5 text-[#1b5e3f]" aria-hidden="true" />
                 </span>
