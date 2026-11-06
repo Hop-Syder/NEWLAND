@@ -34,6 +34,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#141414",
+  // Couvre tout l'écran sur iOS (zones sûres) pour le dock mobile.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

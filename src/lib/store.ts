@@ -105,6 +105,8 @@ interface ShopState {
   cart: CartLine[];
   customer: Customer | null;
   lastOrder: OrderInfo | null;
+  /** Dialogue « Espace client » ouvert (partagé header + dock mobile). */
+  accountOpen: boolean;
 
   goHome: () => void;
   openCatalog: (category?: string) => void;
@@ -119,6 +121,7 @@ interface ShopState {
   clearCart: () => void;
 
   setCustomer: (c: Customer) => void;
+  setAccountOpen: (open: boolean) => void;
   placeOrder: (order: OrderInfo) => void;
   resetToHome: () => void;
 }
@@ -133,6 +136,7 @@ export const useShop = create<ShopState>()(
       cart: [],
       customer: null,
       lastOrder: null,
+      accountOpen: false,
 
       goHome: () =>
         set({ view: "home", productId: null, searchQuery: "" }),
@@ -181,6 +185,8 @@ export const useShop = create<ShopState>()(
       clearCart: () => set({ cart: [] }),
 
       setCustomer: (c) => set({ customer: c }),
+
+      setAccountOpen: (open) => set({ accountOpen: open }),
 
       placeOrder: (order) =>
         set({ lastOrder: order, view: "success", cart: [] }),

@@ -5,7 +5,6 @@ import {
   Search,
   ShoppingBasket,
   UserRound,
-  Menu,
   Shell,
   Trash2,
   Minus,
@@ -81,23 +80,25 @@ export function Header() {
   const setCustomer = useShop((s) => s.setCustomer);
   const catalogCategory = useShop((s) => s.catalogCategory);
   const openCart = useShop((s) => s.openCart);
+  // État partagé avec le dock mobile (qui ouvre aussi ce dialogue).
+  const accountOpen = useShop((s) => s.accountOpen);
+  const setAccountOpen = useShop((s) => s.setAccountOpen);
 
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const [accountOpen, setAccountOpen] = useState(false);
   const [form, setForm] = useState<Customer>({
     name: "",
     phone: "",
     email: "",
   });
+  // Préremplissage à l'ouverture du dialogue — ajustement d'état pendant le
+  // rendu (pattern React), déclenché par l'ouverture partagée header/dock.
+  const [prefilledFor, setPrefilledFor] = useState<string | null>(null);
+  if (accountOpen && customer && prefilledFor !== customer.phone) {
+    setPrefilledFor(customer.phone);
+    setForm({ ...customer });
+  }
   const count = cartCount(cart);
   const subtotal = cartSubtotal(cart);
-
-  // Préremplissage au moment d'ouvrir le dialogue (pas d'effet nécessaire).
-  const openAccount = (open: boolean) => {
-    if (open && customer) setForm(customer);
-    setAccountOpen(open);
-  };
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,7 +164,7 @@ export function Header() {
         </form>
 
         {/* Compte client */}
-        <Dialog open={accountOpen} onOpenChange={openAccount}>
+        <Dialog open={accountOpen} onOpenChange={setAccountOpen}>
           <DialogTrigger asChild>
             <Button
               variant="ghost"
@@ -225,7 +226,7 @@ export function Header() {
               <DialogFooter>
                 <Button
                   type="submit"
-                  className="w-full rounded-full bg-[#141414] hover:bg-[#2e2e2e]"
+                  className="w-full rounded-full bg-[#141414] text-white hover:bg-[#2e2e2e]"
                 >
                   Enregistrer mon profil
                 </Button>
@@ -239,7 +240,7 @@ export function Header() {
           <SheetTrigger asChild>
             <button
               type="button"
-              className="relative inline-flex h-11 items-center gap-2 rounded-full bg-[#141414] px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#2e2e2e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37]"
+              className="relative hidden h-11 items-center gap-2 rounded-full bg-[#141414] px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#2e2e2e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37] sm:inline-flex"
               aria-label={`Ouvrir le panier (${count} article${count > 1 ? "s" : ""})`}
               onClick={() => setCartOpen(true)}
               data-testid="header-cart"
@@ -390,20 +391,7 @@ export function Header() {
           </SheetContent>
         </Sheet>
 
-        {/* Menu mobile */}
-        <button
-          type="button"
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d4ca] bg-white text-[#111111] md:hidden"
-          aria-label="Ouvrir le menu"
-          aria-expanded={mobileOpen}
-          onClick={() => setMobileOpen((v) => !v)}
-        >
-          {mobileOpen ? (
-            <X className="h-5 w-5" aria-hidden="true" />
-          ) : (
-            <Menu className="h-5 w-5" aria-hidden="true" />
-          )}
-        </button>
+        {/* Sur mobile, navigation déportée dans le dock bas fixe. */}
       </div>
 
       {/* Navigation catégories (desktop) */}
@@ -434,61 +422,6 @@ export function Header() {
         </div>
       </nav>
 
-      {/* Navigation mobile déroulante */}
-      {mobileOpen && (
-        <nav
-          aria-label="Menu mobile"
-          className="border-t border-[#e6e3db] bg-[#faf9f6] px-4 pb-4 pt-2 md:hidden"
-        >
-          <form onSubmit={submitSearch} role="search" className="relative mb-2">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-[#8f8f8f]"
-              aria-hidden="true"
-            />
-            <Input
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher un produit…"
-              aria-label="Rechercher un produit"
-              className="h-11 rounded-full border-[#d8d4ca] bg-white pl-10"
-            />
-          </form>
-          <ul className="flex flex-col gap-1">
-            {navItems.map((item) => (
-              <li key={item.label}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    item.action();
-                    setMobileOpen(false);
-                  }}
-                  className={`w-full rounded-xl px-4 py-3 text-left text-sm font-bold ${
-                    item.active
-                      ? "bg-[#141414] text-white"
-                      : "bg-white text-[#111111]"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              </li>
-            ))}
-            <li>
-              <button
-                type="button"
-                onClick={() => {
-                  openAccount(true);
-                  setMobileOpen(false);
-                }}
-                className="flex w-full items-center gap-2 rounded-xl bg-white px-4 py-3 text-left text-sm font-bold text-[#111111]"
-              >
-                <UserRound className="h-5 w-5" aria-hidden="true" />
-                {customer ? "Mon compte" : "Se connecter / créer un compte"}
-              </button>
-            </li>
-          </ul>
-        </nav>
-      )}
     </header>
   );
 }

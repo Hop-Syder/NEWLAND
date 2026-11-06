@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useShop } from "@/lib/store";
 import { Header } from "@/components/shop/Header";
 import { Footer } from "@/components/shop/Footer";
+import { MobileDock } from "@/components/shop/MobileDock";
 import { HomePage } from "@/components/shop/HomePage";
 import { CatalogView } from "@/components/shop/CatalogView";
 import { ProductView } from "@/components/shop/ProductView";
@@ -14,9 +15,10 @@ import { OrderSuccessView } from "@/components/shop/OrderSuccessView";
 export default function Page() {
   const view = useShop((s) => s.view);
 
-  // Remonter en haut à chaque changement de vue (navigation SPA)
+  // Remonter en haut à chaque changement de vue (navigation SPA).
+  // « instant » outrepasse le scroll-behavior: smooth du CSS.
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "auto" });
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
   }, [view]);
 
   return (
@@ -40,6 +42,11 @@ export default function Page() {
       </main>
 
       <Footer />
+
+      {/* Réserve la hauteur du dock fixe pour ne pas masquer le pied de page. */}
+      <div className="h-24 md:hidden" aria-hidden="true" />
+
+      <MobileDock />
     </div>
   );
 }
