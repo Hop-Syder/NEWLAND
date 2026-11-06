@@ -110,7 +110,7 @@ function DockItem({
       </span>
 
       <span
-        className="text-[10px] font-bold leading-none transition-colors duration-300"
+        className="text-[10px] font-bold leading-none tracking-tight transition-colors duration-300"
         style={{ color: active ? GOLD : "rgba(238,235,228,0.65)" }}
       >
         {label}
@@ -159,7 +159,15 @@ export function MobileDock() {
       label: "Chercher",
       icon: Search,
       active: false,
-      onActivate: () => openCatalog("all"),
+      onActivate: () => {
+        openCatalog("all");
+        // Le champ de recherche du catalogue reçoit le focus après montage.
+        window.setTimeout(
+          () =>
+            (document.getElementById("filter-search") as HTMLInputElement | null)?.focus(),
+          reducedMotion ? 60 : 180,
+        );
+      },
     },
     {
       id: "account",
