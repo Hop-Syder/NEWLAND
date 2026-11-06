@@ -105,14 +105,11 @@ export function CheckoutView() {
   if (cart.length === 0) {
     return (
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-4 py-24 text-center">
-        <h1 className="text-2xl font-extrabold text-[#123d29]">
+        <h1 className="text-2xl font-extrabold text-[#0b0b0b]">
           Votre panier est vide
         </h1>
-        <p className="text-muted-foreground">
-          Ajoutez d&apos;abord des produits avant de finaliser une commande.
-        </p>
         <Button
-          className="rounded-full bg-[#e8842c] font-extrabold hover:bg-[#d9741f]"
+          className="rounded-full bg-[#d4af37] font-extrabold hover:bg-[#bfa032]"
           onClick={() => openCatalog("all")}
         >
           Voir le catalogue
@@ -130,7 +127,7 @@ export function CheckoutView() {
       toast({
         title: "Informations manquantes",
         description:
-          "Nom, téléphone et adresse de livraison sont nécessaires pour vous livrer.",
+          "Nom, téléphone et adresse requis.",
         variant: "destructive",
       });
       return;
@@ -144,7 +141,7 @@ export function CheckoutView() {
       toast({
         title: "Numéro de paiement requis",
         description:
-          "Indiquez le numéro Mobile Money qui recevra la demande de paiement.",
+          "Indiquez le numéro Mobile Money à débiter.",
         variant: "destructive",
       });
       return;
@@ -183,17 +180,13 @@ export function CheckoutView() {
       <Reveal>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-extrabold text-[#123d29]">
+            <h1 className="text-3xl font-extrabold text-[#0b0b0b]">
               Finaliser ma commande
             </h1>
-            <p className="mt-1 text-muted-foreground">
-              Trois étapes simples : vos coordonnées, la livraison au Bénin, le
-              paiement.
-            </p>
           </div>
           <Button
             variant="ghost"
-            className="rounded-full font-bold text-[#1b5e3f] hover:bg-[#e4efe4]"
+            className="rounded-full font-bold text-[#8a6a14] hover:bg-[#f4eeda]"
             onClick={openCart}
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -208,13 +201,13 @@ export function CheckoutView() {
           <Reveal>
             <section
               aria-labelledby="coord-title"
-              className="rounded-2xl border border-[#e6ddc9] bg-white p-6 shadow-sm"
+              className="rounded-2xl border border-[#e6e3db] bg-white p-6 shadow-sm"
             >
               <h2
                 id="coord-title"
-                className="flex items-center gap-2.5 text-lg font-extrabold text-[#1b5e3f]"
+                className="flex items-center gap-2.5 text-lg font-extrabold text-[#8a6a14]"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e4efe4] text-sm font-extrabold text-[#1b5e3f]">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f4eeda] text-sm font-extrabold text-[#8a6a14]">
                   1
                 </span>
                 <UserRound className="h-5 w-5" aria-hidden="true" />
@@ -229,7 +222,7 @@ export function CheckoutView() {
                     onChange={(e) => set("name", e.target.value)}
                     placeholder="Ex. Hounkpatin Bernard"
                     autoComplete="name"
-                    className="h-11 rounded-xl border-[#d9cfba]"
+                    className="h-11 rounded-xl border-[#d8d4ca]"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -241,7 +234,7 @@ export function CheckoutView() {
                     onChange={(e) => set("phone", e.target.value)}
                     placeholder="+229 01 97 00 00 00"
                     autoComplete="tel"
-                    className="h-11 rounded-xl border-[#d9cfba]"
+                    className="h-11 rounded-xl border-[#d8d4ca]"
                   />
                 </div>
                 <div className="grid gap-2 sm:col-span-2">
@@ -253,7 +246,7 @@ export function CheckoutView() {
                     onChange={(e) => set("email", e.target.value)}
                     placeholder="vous@exemple.com"
                     autoComplete="email"
-                    className="h-11 rounded-xl border-[#d9cfba]"
+                    className="h-11 rounded-xl border-[#d8d4ca]"
                   />
                 </div>
               </div>
@@ -264,17 +257,17 @@ export function CheckoutView() {
           <Reveal>
             <section
               aria-labelledby="livraison-title"
-              className="rounded-2xl border border-[#e6ddc9] bg-white p-6 shadow-sm"
+              className="rounded-2xl border border-[#e6e3db] bg-white p-6 shadow-sm"
             >
               <h2
                 id="livraison-title"
-                className="flex items-center gap-2.5 text-lg font-extrabold text-[#1b5e3f]"
+                className="flex items-center gap-2.5 text-lg font-extrabold text-[#8a6a14]"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e4efe4] text-sm font-extrabold text-[#1b5e3f]">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f4eeda] text-sm font-extrabold text-[#8a6a14]">
                   2
                 </span>
                 <MapPin className="h-5 w-5" aria-hidden="true" />
-                Adresse de livraison au Bénin
+                Livraison
               </h2>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
@@ -282,7 +275,7 @@ export function CheckoutView() {
                   <Select value={form.city} onValueChange={(v) => set("city", v)}>
                     <SelectTrigger
                       id="co-city"
-                      className="h-11 rounded-xl border-[#d9cfba]"
+                      className="h-11 rounded-xl border-[#d8d4ca]"
                       aria-label="Choisir la ville de livraison"
                     >
                       <SelectValue placeholder="Choisir une ville" />
@@ -303,7 +296,7 @@ export function CheckoutView() {
                     value={form.district}
                     onChange={(e) => set("district", e.target.value)}
                     placeholder="Ex. Cadjèhoun, Fidjrossè, Zogbo…"
-                    className="h-11 rounded-xl border-[#d9cfba]"
+                    className="h-11 rounded-xl border-[#d8d4ca]"
                   />
                 </div>
                 <div className="grid gap-2 sm:col-span-2">
@@ -314,7 +307,7 @@ export function CheckoutView() {
                     onChange={(e) => set("address", e.target.value)}
                     placeholder="Ex. Rue 12.084, maison bleue après la pharmacie"
                     autoComplete="street-address"
-                    className="h-11 rounded-xl border-[#d9cfba]"
+                    className="h-11 rounded-xl border-[#d8d4ca]"
                   />
                 </div>
                 <div className="grid gap-2 sm:col-span-2">
@@ -324,31 +317,26 @@ export function CheckoutView() {
                     value={form.landmark}
                     onChange={(e) => set("landmark", e.target.value)}
                     placeholder="Ex. en face du carrefour Sainte Rita"
-                    className="h-11 rounded-xl border-[#d9cfba]"
+                    className="h-11 rounded-xl border-[#d8d4ca]"
                   />
                 </div>
                 <div className="grid gap-2 sm:col-span-2">
-                  <Label htmlFor="co-notes">Instructions au livreur (facultatif)</Label>
+                  <Label htmlFor="co-notes">Instructions (facultatif)</Label>
                   <Textarea
                     id="co-notes"
                     value={form.notes}
                     onChange={(e) => set("notes", e.target.value)}
                     placeholder="Ex. appeler avant d'arriver, livrer après 17 h…"
-                    className="min-h-20 rounded-xl border-[#d9cfba]"
+                    className="min-h-20 rounded-xl border-[#d8d4ca]"
                   />
                 </div>
               </div>
 
-              <div className="mt-4 rounded-xl bg-[#f2ecdf]/70 p-4 text-sm text-[#43503f]">
-                <p className="font-bold text-[#123d29]">
-                  Zone estimée : {zone.label}
-                </p>
+              <div className="mt-4 rounded-xl bg-[#f1efe9]/70 p-4 text-sm text-[#3d3d3d]">
                 <p>
-                  Délai indicatif : {zone.eta} · Frais :{" "}
+                  {zone.label} · {zone.eta} ·{" "}
                   {freeShipping ? (
-                    <span className="font-extrabold text-[#1b5e3f]">
-                      offerts (commande ≥ 100 000 FCFA)
-                    </span>
+                    <span className="font-extrabold text-[#8a6a14]">livraison offerte</span>
                   ) : (
                     <span className="font-extrabold">{formatFCFA(zone.fee)}</span>
                   )}
@@ -361,17 +349,17 @@ export function CheckoutView() {
           <Reveal>
             <section
               aria-labelledby="paiement-title"
-              className="rounded-2xl border border-[#e6ddc9] bg-white p-6 shadow-sm"
+              className="rounded-2xl border border-[#e6e3db] bg-white p-6 shadow-sm"
             >
               <h2
                 id="paiement-title"
-                className="flex items-center gap-2.5 text-lg font-extrabold text-[#1b5e3f]"
+                className="flex items-center gap-2.5 text-lg font-extrabold text-[#8a6a14]"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e4efe4] text-sm font-extrabold text-[#1b5e3f]">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f4eeda] text-sm font-extrabold text-[#8a6a14]">
                   3
                 </span>
                 <Wallet className="h-5 w-5" aria-hidden="true" />
-                Mode de paiement
+                Paiement
               </h2>
               <RadioGroup
                 value={form.payment}
@@ -385,8 +373,8 @@ export function CheckoutView() {
                       htmlFor={`pay-${m.id}`}
                       className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors ${
                         form.payment === m.id
-                          ? "border-[#e8842c] bg-[#f8e8d4]/60"
-                          : "border-[#e6ddc9] bg-white hover:bg-[#f2ecdf]/50"
+                          ? "border-[#d4af37] bg-[#f4eeda]/60"
+                          : "border-[#e6e3db] bg-white hover:bg-[#f1efe9]/50"
                       }`}
                     >
                       <RadioGroupItem
@@ -395,7 +383,7 @@ export function CheckoutView() {
                         className="mt-0.5"
                       />
                       <span>
-                        <span className="block font-bold text-[#21301f]">
+                        <span className="block font-bold text-[#111111]">
                           {m.label}
                         </span>
                         <span className="mt-0.5 block text-sm text-muted-foreground">
@@ -420,23 +408,20 @@ export function CheckoutView() {
                     value={form.momoNumber}
                     onChange={(e) => set("momoNumber", e.target.value)}
                     placeholder="Ex. +229 01 96 00 00 00"
-                    className="h-11 rounded-xl border-[#d9cfba]"
+                    className="h-11 rounded-xl border-[#d8d4ca]"
                   />
                   <p className="text-xs text-muted-foreground">
-                    À la confirmation, une demande de paiement sera envoyée sur
-                    ce numéro. Validez avec votre code secret.
+                    Vous recevrez une demande de paiement sur ce numéro.
                   </p>
                 </div>
               )}
 
               {form.payment === "card" && (
-                <div className="mt-4 flex items-start gap-3 rounded-xl bg-[#f2ecdf]/70 p-4 text-sm text-[#43503f]">
-                  <CreditCard className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#1b5e3f]" aria-hidden="true" />
+                <div className="mt-4 flex items-start gap-3 rounded-xl bg-[#f1efe9]/70 p-4 text-sm text-[#3d3d3d]">
+                  <CreditCard className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#8a6a14]" aria-hidden="true" />
                   <p>
-                    Après validation, vous serez dirigé vers la page de paiement
-                    sécurisée de notre partenaire (agrégateur type CinetPay)
-                    pour saisir vos données de carte. Aucune donnée bancaire
-                    n&apos;est stockée sur ce site.
+                    Paiement sécurisé via notre partenaire (type CinetPay).
+                    Aucune donnée bancaire stockée ici.
                   </p>
                 </div>
               )}
@@ -447,8 +432,8 @@ export function CheckoutView() {
         {/* Récapitulatif */}
         <aside aria-label="Récapitulatif de la commande">
           <Reveal direction="right">
-            <div className="rounded-2xl border border-[#e6ddc9] bg-white p-6 shadow-sm lg:sticky lg:top-40">
-              <h2 className="text-lg font-extrabold text-[#123d29]">
+            <div className="rounded-2xl border border-[#e6e3db] bg-white p-6 shadow-sm lg:sticky lg:top-40">
+              <h2 className="text-lg font-extrabold text-[#0b0b0b]">
                 Votre commande
               </h2>
               <Separator className="my-4" />
@@ -472,7 +457,7 @@ export function CheckoutView() {
                           Quantité : {line.qty}
                         </p>
                       </div>
-                      <p className="text-sm font-extrabold text-[#1b5e3f]">
+                      <p className="text-sm font-extrabold text-[#8a6a14]">
                         {formatFCFA(p.price * line.qty)}
                       </p>
                     </li>
@@ -498,8 +483,8 @@ export function CheckoutView() {
               <Separator className="my-4" />
 
               <div className="flex items-baseline justify-between">
-                <span className="font-bold text-[#21301f]">Total à payer</span>
-                <span className="text-2xl font-extrabold text-[#1b5e3f]">
+                <span className="font-bold text-[#111111]">Total à payer</span>
+                <span className="text-2xl font-extrabold text-[#8a6a14]">
                   {formatFCFA(total)}
                 </span>
               </div>
@@ -508,7 +493,7 @@ export function CheckoutView() {
                 type="submit"
                 size="lg"
                 disabled={submitting}
-                className="mt-5 h-13 w-full rounded-full bg-[#e8842c] text-base font-extrabold hover:bg-[#d9741f] disabled:opacity-60"
+                className="mt-5 h-13 w-full rounded-full bg-[#d4af37] text-base font-extrabold hover:bg-[#bfa032] disabled:opacity-60"
               >
                 {submitting ? (
                   <>
@@ -527,10 +512,8 @@ export function CheckoutView() {
               </Button>
 
               <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
-                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#1b5e3f]" aria-hidden="true" />
-                En confirmant, vous acceptez nos conditions de vente. Retours
-                sous 5 jours, service client joignable par téléphone et
-                WhatsApp.
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#8a6a14]" aria-hidden="true" />
+                Retours sous 5 jours · Conditions de vente applicables.
               </p>
             </div>
           </Reveal>

@@ -100,17 +100,12 @@ export function CatalogView() {
       {/* En-tête du catalogue */}
       <Reveal>
         <div className="mb-6">
-          <p className="text-sm font-bold uppercase tracking-wide text-[#b05f14]">
+          <p className="text-sm font-bold uppercase tracking-wide text-[#8a6a14]">
             Catalogue
           </p>
-          <h1 className="mt-1 text-3xl font-extrabold text-[#123d29] sm:text-4xl">
+          <h1 className="mt-1 text-3xl font-extrabold text-[#0b0b0b] sm:text-4xl">
             {activeCategoryLabel}
           </h1>
-          <p className="mt-2 max-w-2xl text-muted-foreground">
-            Comparez tranquillement : photos, caractéristiques, prix en FCFA et
-            disponibilité pour chaque article. {results.length} produit
-            {results.length > 1 ? "s" : ""} correspondent à votre recherche.
-          </p>
         </div>
       </Reveal>
 
@@ -128,8 +123,8 @@ export function CatalogView() {
             onClick={() => openCatalog("all")}
             className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition-colors ${
               catalogCategory === "all"
-                ? "bg-[#1b5e3f] text-white"
-                : "border border-[#d9cfba] bg-white text-[#21301f] hover:bg-[#efe7d6]"
+                ? "bg-[#141414] text-white"
+                : "border border-[#d8d4ca] bg-white text-[#111111] hover:bg-[#eeebe4]"
             }`}
           >
             <LayoutGrid className="h-4 w-4" aria-hidden="true" />
@@ -144,8 +139,8 @@ export function CatalogView() {
               onClick={() => openCatalog(c.id)}
               className={`rounded-full px-4 py-2 text-sm font-bold transition-colors ${
                 catalogCategory === c.id
-                  ? "bg-[#1b5e3f] text-white"
-                  : "border border-[#d9cfba] bg-white text-[#21301f] hover:bg-[#efe7d6]"
+                  ? "bg-[#141414] text-white"
+                  : "border border-[#d8d4ca] bg-white text-[#111111] hover:bg-[#eeebe4]"
               }`}
             >
               {c.name} ({countByCategory(c.id)})
@@ -158,8 +153,8 @@ export function CatalogView() {
         {/* Barre latérale de filtres */}
         <aside aria-label="Filtres" className="lg:sticky lg:top-40 lg:self-start">
           <Reveal direction="left">
-            <div className="rounded-2xl border border-[#e6ddc9] bg-white p-5 shadow-sm">
-              <p className="flex items-center gap-2 text-base font-extrabold text-[#1b5e3f]">
+            <div className="rounded-2xl border border-[#e6e3db] bg-white p-5 shadow-sm">
+              <p className="flex items-center gap-2 text-base font-extrabold text-[#8a6a14]">
                 <SlidersHorizontal className="h-4.5 w-4.5" aria-hidden="true" />
                 Filtres
               </p>
@@ -176,8 +171,8 @@ export function CatalogView() {
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Mot-clé : blender, marmite…"
-                  className="h-10 rounded-xl border-[#d9cfba]"
+                  placeholder="Blender, marmite…"
+                  className="h-10 rounded-xl border-[#d8d4ca]"
                 />
               </div>
 
@@ -187,7 +182,7 @@ export function CatalogView() {
                   <Label htmlFor="filter-price" className="text-sm font-bold">
                     Budget maximum
                   </Label>
-                  <span className="rounded-full bg-[#f8e8d4] px-2 py-0.5 text-xs font-extrabold text-[#b05f14]">
+                  <span className="rounded-full bg-[#f4eeda] px-2 py-0.5 text-xs font-extrabold text-[#8a6a14]">
                     {new Intl.NumberFormat("fr-FR").format(maxPrice)} FCFA
                   </span>
                 </div>
@@ -199,7 +194,7 @@ export function CatalogView() {
                   step={1000}
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(Number(e.target.value))}
-                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#e6ddc9] accent-[#e8842c]"
+                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#e6e3db] accent-[#d4af37]"
                   aria-valuemin={0}
                   aria-valuemax={ABS_MAX}
                   aria-valuenow={maxPrice}
@@ -222,16 +217,16 @@ export function CatalogView() {
                     checked={onlyStock}
                     onCheckedChange={(v) => setOnlyStock(v === true)}
                   />
-                  Uniquement les produits en stock
+                  Uniquement en stock
                 </label>
               </div>
 
               <Button
                 variant="outline"
-                className="mt-5 w-full rounded-full border-[#d9cfba] text-[#1b5e3f] hover:bg-[#efe7d6]"
+                className="mt-5 w-full rounded-full border-[#d8d4ca] text-[#8a6a14] hover:bg-[#eeebe4]"
                 onClick={resetFilters}
               >
-                Réinitialiser les filtres
+                Réinitialiser
               </Button>
             </div>
           </Reveal>
@@ -240,9 +235,9 @@ export function CatalogView() {
         {/* Résultats */}
         <div>
           <Reveal delay={80}>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e6ddc9] bg-white px-4 py-3">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e6e3db] bg-white px-4 py-3">
               <p className="text-sm text-muted-foreground" aria-live="polite">
-                <span className="font-extrabold text-[#21301f]">
+                <span className="font-extrabold text-[#111111]">
                   {results.length}
                 </span>{" "}
                 produit{results.length > 1 ? "s" : ""}
@@ -250,7 +245,7 @@ export function CatalogView() {
                   <>
                     {" "}
                     pour «&nbsp;
-                    <span className="font-bold text-[#1b5e3f]">
+                    <span className="font-bold text-[#8a6a14]">
                       {searchQuery.trim()}
                     </span>
                     &nbsp;»
@@ -264,7 +259,7 @@ export function CatalogView() {
                 <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
                   <SelectTrigger
                     id="filter-sort"
-                    className="h-9 w-52 rounded-full border-[#d9cfba]"
+                    className="h-9 w-52 rounded-full border-[#d8d4ca]"
                     aria-label="Trier les produits"
                   >
                     <SelectValue placeholder="Pertinence" />
@@ -285,18 +280,17 @@ export function CatalogView() {
           </Reveal>
 
           {results.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-[#d9cfba] bg-white py-16 text-center">
-              <SearchX className="h-10 w-10 text-[#8a9a86]" aria-hidden="true" />
-              <p className="text-lg font-extrabold text-[#21301f]">
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-[#d8d4ca] bg-white py-16 text-center">
+              <SearchX className="h-10 w-10 text-[#8f8f8f]" aria-hidden="true" />
+              <p className="text-lg font-extrabold text-[#111111]">
                 Aucun produit ne correspond
               </p>
               <p className="max-w-sm text-sm text-muted-foreground">
-                Essayez un mot-clé plus simple (« marmite », « ventilateur »…)
-                ou élargissez votre budget.
+                Essayez un autre mot-clé ou élargissez le budget.
               </p>
               <Button
                 variant="outline"
-                className="mt-1 rounded-full border-[#1b5e3f] text-[#1b5e3f] hover:bg-[#e4efe4]"
+                className="mt-1 rounded-full border-[#111111] text-[#8a6a14] hover:bg-[#f4eeda]"
                 onClick={resetFilters}
               >
                 Tout afficher

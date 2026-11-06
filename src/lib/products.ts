@@ -33,19 +33,19 @@ export const CATEGORIES: Category[] = [
   {
     id: "appareils",
     name: "Appareils ménagers",
-    tagline: "Réfrigérateurs, micro-ondes, machines à laver, ventilateurs…",
+    tagline: "Frigos, micro-ondes, lave-linge…",
     imageKey: "cat_appareils",
   },
   {
     id: "cuisine",
     name: "Cuisine",
-    tagline: "Batteries antiadhésives, casseroles, ustensiles malins…",
+    tagline: "Marmites, poêles, ustensiles…",
     imageKey: "cat_cuisine",
   },
   {
     id: "maison",
     name: "Maison & Bureau",
-    tagline: "Bureaux, fauteuils, canapés : un intérieur confortable.",
+    tagline: "Bureaux, fauteuils, canapés…",
     imageKey: "cat_maison",
   },
 ];
@@ -68,9 +68,9 @@ export const PRODUCTS: Product[] = [
     availability: "in_stock",
     imageKeys: ["p_microondes"],
     shortDescription:
-      "Compact et simple, idéal pour réchauffer et décongeler au quotidien.",
+      "Compact, pour réchauffer et décongeler.",
     description:
-      "Ce micro-ondes Hisense de 20 litres trouve facilement sa place dans une cuisine de toutes les tailles. Ses commandes simples permettent de réchauffer les plats, de décongeler rapidement et de préparer les petits déjeuners sans y penser trop longtemps. Une valeur sûre, vendue et assurée localement à Cotonou.",
+      "Un micro-ondes compact et simple pour réchauffer et décongeler chaque jour.",
     features: [
       "Capacité : 20 litres",
       "Coloris blanc, habillage facile à nettoyer",
@@ -95,9 +95,9 @@ export const PRODUCTS: Product[] = [
     availability: "in_stock",
     imageKeys: ["p_microondes", "p_blender"],
     shortDescription:
-      "Micro-ondes + grill : pour gratiner, rôtir et réchauffer en un appareil.",
+      "Micro-ondes + grill 2 en 1.",
     description:
-      "Le Syinix 20 L avec grill combine deux fonctions dans un seul appareil : réchauffer comme un micro-ondes classique, et griller pour dorer pains, poulets et gratins. Une solution pratique pour les cuisines où chaque centimètre compte.",
+      "Réchauffe comme un micro-ondes et grille pains, poulets et gratins, en un seul appareil.",
     features: [
       "Capacité : 20 litres",
       "Fonction grill pour dorer et gratiner",
@@ -123,9 +123,9 @@ export const PRODUCTS: Product[] = [
     leadTimeDays: 3,
     imageKeys: ["p_frigo"],
     shortDescription:
-      "Grand volume 249 L, congélateur en bas : frais et organisé toute l'année.",
+      "249 L, congélateur en bas.",
     description:
-      "Avec ses 249 litres et son congélateur en bas, ce réfrigérateur TCL offre un vrai confort d'organisation pour une famille : les produits frais à hauteur des yeux, les surgelés accessibles en bas. Un modèle sobre et efficace, adapté au climat béninois.",
+      "249 litres avec congélateur en bas : produits frais à hauteur des yeux, surgelés accessibles.",
     features: [
       "Volume total : 249 litres",
       "Congélateur en bas, porte inversable",
@@ -150,9 +150,9 @@ export const PRODUCTS: Product[] = [
     availability: "in_stock",
     imageKeys: ["p_lavelinge"],
     shortDescription:
-      "Grande capacité 8 kg pour le linge de toute la famille, sans effort.",
+      "Grande capacité 8 kg.",
     description:
-      "La machine à laver TCL de 8 kg prend en charge les grosses lessives familiales : draps, uniformes, pagnes. Ses programmes simples se choisissent en un geste, et la grande capacité réduit le nombre de lessives par semaine.",
+      "8 kg pour les grosses lessives familiales, avec des programmes simples à choisir.",
     features: [
       "Capacité de lavage : 8 kg",
       "Programmes de lavage sélectionnables",
@@ -177,9 +177,9 @@ export const PRODUCTS: Product[] = [
     leadTimeDays: 4,
     imageKeys: ["p_plaque"],
     shortDescription:
-      "Quatre brûleurs à gaz encastrables pour cuisiner comme un chef.",
+      "4 brûleurs à gaz encastrables.",
     description:
-      "La plaque encastrable Focus F405B équipé de quatre brûleurs s'intègre dans le plan de travail pour une cuisine nette et performante. Les feux se règlent finement, du mijoté doux à la friture vive — idéal pour la cuisine béninoise exigeante.",
+      "Quatre brûleurs à gaz encastrables, du mijoté doux à la friture vive.",
     features: [
       "4 brûleurs à gaz",
       "Encastrement plan de travail",
@@ -204,9 +204,9 @@ export const PRODUCTS: Product[] = [
     leadTimeDays: 4,
     imageKeys: ["p_hotte"],
     shortDescription:
-      "Évacue fumées et odeurs de friture : la cuisine reste fraîche.",
+      "Évacue fumées et odeurs.",
     description:
-      "Installée au-dessus de la cuisson, cette hotte décorative Focus Line aspire les fumées et les odeurs dès qu'elles apparaissent. Un air plus sain dans la cuisine, des murs qui restent propres plus longtemps.",
+      "Aspire fumées et odeurs dès la cuisson : un air plus sain et des murs propres.",
     features: [
       "Largeur adaptée aux plaques 60 cm",
       "Fonction extraction et recyclage",
@@ -231,9 +231,9 @@ export const PRODUCTS: Product[] = [
     availability: "in_stock",
     imageKeys: ["p_blender", "p_blender2"],
     shortDescription:
-      "8 fonctions en 1 : piment, tomate, jus, bouillie… le compagnon des cuisines béninoises.",
+      "8 fonctions en 1, bol XXL 4 L.",
     description:
-      "Grand bol de 4 litres et huit fonctions réunies dans un seul appareil : mixer le piment et la tomate, préparer les jus, broyer les épices, préparer la bouillie. C'est le Blender « Bardefu » très populaire dans les marchés et boutiques de Cotonou.",
+      "Le fameux blender 4 L très populaire au Bénin : piment, tomate, jus, bouillie et épices.",
     features: [
       "Bol XXL : 4 litres",
       "8 fonctions : mixer, broyer, hacher…",
@@ -258,9 +258,9 @@ export const PRODUCTS: Product[] = [
     availability: "in_stock",
     imageKeys: ["p_blender2", "p_blender"],
     shortDescription:
-      "Compact et robuste : parfait pour le piment, les épices et les petits jus.",
+      "Compact : piment, épices, petits jus.",
     description:
-      "Ce duo blender + moulin Binatone de 350 watts gère les préparations du quotidien sans prendre de place : sauce tomate, piment, épices moulues, petits smoothies. Son bol de 1,5 L convient aux couples et petites familles.",
+      "Blender + moulin de 350 W pour la sauce tomate, le piment et les épices du quotidien.",
     features: [
       "Puissance : 350 W",
       "Bol : 1,5 litre",
@@ -284,9 +284,9 @@ export const PRODUCTS: Product[] = [
     availability: "in_stock",
     imageKeys: ["p_ventbrum"],
     shortDescription:
-      "Brumisation + ventilation : la fraîcheur qui soulage pendant la saison chaude.",
+      "Brumisation + ventilation.",
     description:
-      "Ce ventilateur colonne de 16 pouces projette une fine brume d'eau en plus du flux d'air : la sensation de fraîcheur est immédiate, même aux heures les plus chaudes. Idéal pour le salon, la terrasse ou une boutique.",
+      "Projette une fine brume en plus du flux d'air : fraîcheur immédiate aux heures chaudes.",
     features: [
       "Diamètre : 16 pouces",
       "Puissance : 75 W",
@@ -311,9 +311,9 @@ export const PRODUCTS: Product[] = [
     availability: "in_stock",
     imageKeys: ["p_ventpince"],
     shortDescription:
-      "Se pince partout : bureau, lit, coin lecture — une brise personnelle.",
+      "Se pince partout, brise dirigée.",
     description:
-      "Petit, léger et muni d'une pince solide, ce ventilateur de table s'accroche où vous en avez besoin : pied de lit, bureau d'étudiant, comptoir de boutique. Une brise dirigée exactement là où il faut, pour un budget mini.",
+      "Se fixe partout grâce à sa pince : lit, bureau, comptoir — pour un budget mini.",
     features: [
       "Fixation par pince robuste",
       "Oscillation réglable à la main",
@@ -339,9 +339,9 @@ export const PRODUCTS: Product[] = [
     availability: "in_stock",
     imageKeys: ["p_batterie23"],
     shortDescription:
-      "Marmite géante, faitout, poêles, couvercles : une cuisine complète d'un coup.",
+      "Cuisine complète : 23 pièces.",
     description:
-      "De la marmite géante pour le riz de fête à la poêle pour les œufs du matin, ce set de 23 pièces couvre tous les besoins d'une famille : marmites antiadhésives de tailles variées, faitout, poêles et couvercles assortis. Le revêtement antiadhésif facilite la cuisson comme le nettoyage.",
+      "De la marmite géante à la poêle : 23 pièces antiadhésives pour toute la famille.",
     features: [
       "23 pièces assorties",
       "Revêtement antiadhésif",
@@ -367,9 +367,9 @@ export const PRODUCTS: Product[] = [
     availability: "in_stock",
     imageKeys: ["p_batterie13"],
     shortDescription:
-      "L'essentiel antiadhésif à petit prix : marmites, poêle et couvercles.",
+      "L'essentiel antiadhésif, petit prix.",
     description:
-      "Un set de 13 pièces qui rassemble le nécessaire pour cuisiner chaque jour sans se ruiner : marmites de tailles moyennes, poêle et couvercles. Le revêtement antiadhésif permet de cuisiner avec moins d'huile et de nettoyer en un geste.",
+      "Le nécessaire antiadhésif à petit prix : marmites, poêle et couvercles.",
     features: [
       "13 pièces assorties",
       "Revêtement antiadhésif",
@@ -394,9 +394,9 @@ export const PRODUCTS: Product[] = [
     availability: "in_stock",
     imageKeys: ["p_casseroles"],
     shortDescription:
-      "Casseroles épaisses qui répartissent bien la chaleur et durent.",
+      "Fonds épais, cuisson homogène.",
     description:
-      "Cet ensemble de casseroles mise sur la qualité de fabrication : fond épais qui diffuse uniformément la chaleur, parois solides, poignées bien fixées. Des ustensiles qui accompagnent la cuisine quotidienne année après année.",
+      "Fond épais qui diffuse bien la chaleur, parois solides et poignées bien fixées.",
     features: [
       "Fonds épais à diffusion homogène",
       "Plusieurs diamètres assortis",
@@ -420,9 +420,9 @@ export const PRODUCTS: Product[] = [
     availability: "in_stock",
     imageKeys: ["p_kitcuisine"],
     shortDescription:
-      "Trois petits outils malins qui rendent la cuisine tellement plus simple.",
+      "Aiguiseur, éplucheur, ciseaux.",
     description:
-      "Un aiguiseur pour retrouver des lames qui coupent vraiment, un éplucheur efficace pour les ignames et les pommes de terre, des ciseaux robustes pour tout le reste. Le trio discret qui fait gagner un temps précieux chaque jour.",
+      "Un aiguiseur, un éplucheur et des ciseaux : le trio qui fait gagner du temps.",
     features: [
       "Aiguiseur 2 étapes (grossier / fin)",
       "Éplucheur lame inox",
@@ -446,9 +446,9 @@ export const PRODUCTS: Product[] = [
     availability: "in_stock",
     imageKeys: ["p_seaux"],
     shortDescription:
-      "Solides et empilables : pour la cuisine, la lessive et le rangement.",
+      "Solides et empilables, 3 tailles.",
     description:
-      "Un seau et des bols en plastique souple mais résistant : laver les légumes, tremper le linge, transporter l'eau, ranger les petits objets. Trois tailles qui s'emboîtent pour un rangement sans encombre.",
+      "Trois tailles qui s'emboîtent, pour la cuisine, la lessive et le rangement.",
     features: [
       "3 pièces de tailles progressives",
       "Plastique épais, anses renforcées",
@@ -475,9 +475,9 @@ export const PRODUCTS: Product[] = [
     leadTimeDays: 5,
     imageKeys: ["p_bureau"],
     shortDescription:
-      "Grand plateau de travail et rangements : un vrai poste de travail.",
+      "Grand plateau + rangements.",
     description:
-      "Le bureau Eden D1494 offre un plateau généreux pour étaler dossiers, ordinateur et cahiers, avec des rangements pour garder un espace net. Conçu pour un usage quotidien soutenu, à la maison comme dans un bureau d'entreprise.",
+      "Plateau généreux et caisson à tiroirs pour un poste de travail net, à la maison ou au bureau.",
     features: [
       "Plateau de travail spacieux",
       "Caisson à tiroirs intégré",
@@ -503,9 +503,9 @@ export const PRODUCTS: Product[] = [
     leadTimeDays: 5,
     imageKeys: ["p_fauteuil"],
     shortDescription:
-      "Soutien lombaire et réglages complets pour de longues journées assis.",
+      "Soutien lombaire, tout réglable.",
     description:
-      "Le fauteuil Flexon MF est pensé pour les longues heures de travail : assise rembourrée, soutien lombaire, accoudoirs et hauteur réglables. Il préserve le dos des professionnels qui passent la journée au bureau.",
+      "Assise rembourrée, soutien lombaire et réglages complets pour de longues journées.",
     features: [
       "Dossier ergonomique à soutien lombaire",
       "Hauteur et inclinaison réglables",
@@ -529,9 +529,9 @@ export const PRODUCTS: Product[] = [
     availability: "in_stock",
     imageKeys: ["p_chaise"],
     shortDescription:
-      "Confort au quotidien à prix maîtrisé : pivotante, rembourrée, réglable.",
+      "Pivotante, rembourrée, réglable.",
     description:
-      "Une chaise de bureau simple et bien pensée : assise rembourrée confortable, rotation complète pour se tourner vers son écran ou ses dossiers, réglage en hauteur. Le bon équilibre entre confort et budget pour un bureau à la maison.",
+      "Simple et bien pensée : assise rembourrée, rotation 360° et réglage en hauteur.",
     features: [
       "Assise rembourrée",
       "Rotation 360°",
@@ -556,9 +556,9 @@ export const PRODUCTS: Product[] = [
     leadTimeDays: 7,
     imageKeys: ["p_canape"],
     shortDescription:
-      "Le grand salon qui accueille toute la famille et les invités.",
+      "7 places, bois massif.",
     description:
-      "Ce canapé d'angle en bois massif structure le salon : sept places pour la famille réunie, une assise ferme qui dure, et un habillage soigné. Fabriqué et livré par un atelier de Cotonou, il se commande avec le tissu de votre choix.",
+      "Sept places en bois massif, fabriqué à Cotonou, tissu au choix à la commande.",
     features: [
       "7 places, configuration d'angle",
       "Structure en bois massif",

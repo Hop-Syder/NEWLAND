@@ -43,19 +43,15 @@ export function CartView() {
   if (cart.length === 0) {
     return (
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-4 py-24 text-center">
-        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#efe7d6]">
-          <ShoppingBasket className="h-10 w-10 text-[#8a9a86]" aria-hidden="true" />
+        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#eeebe4]">
+          <ShoppingBasket className="h-10 w-10 text-[#8f8f8f]" aria-hidden="true" />
         </span>
-        <h1 className="text-2xl font-extrabold text-[#123d29]">
+        <h1 className="text-2xl font-extrabold text-[#0b0b0b]">
           Votre panier est vide
         </h1>
-        <p className="text-muted-foreground">
-          Ajoutez des produits utiles à votre maison : appareils, cuisine,
-          bureau… le catalogue n&apos;attend que vous.
-        </p>
         <Button
           size="lg"
-          className="mt-2 h-12 rounded-full bg-[#e8842c] px-8 font-extrabold hover:bg-[#d9741f]"
+          className="mt-2 h-12 rounded-full bg-[#d4af37] px-8 font-extrabold hover:bg-[#bfa032]"
           onClick={() => openCatalog("all")}
         >
           Découvrir le catalogue
@@ -70,17 +66,16 @@ export function CartView() {
       <Reveal>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-extrabold text-[#123d29]">
+            <h1 className="text-3xl font-extrabold text-[#0b0b0b]">
               Mon panier
             </h1>
             <p className="mt-1 text-muted-foreground">
-              {count} article{count > 1 ? "s" : ""} — vérifiez les quantités
-              puis passez à la commande.
+              {count} article{count > 1 ? "s" : ""}
             </p>
           </div>
           <Button
             variant="ghost"
-            className="rounded-full font-bold text-[#1b5e3f] hover:bg-[#e4efe4]"
+            className="rounded-full font-bold text-[#8a6a14] hover:bg-[#f4eeda]"
             onClick={() => openCatalog("all")}
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -98,7 +93,7 @@ export function CartView() {
             return (
               <li key={line.productId}>
                 <Reveal delay={i * 50}>
-                  <div className="flex gap-4 rounded-2xl border border-[#e6ddc9] bg-white p-4 shadow-sm">
+                  <div className="flex gap-4 rounded-2xl border border-[#e6e3db] bg-white p-4 shadow-sm">
                     <SafeImg
                       src={imgFor(p.imageKeys[0])}
                       alt={p.name}
@@ -108,16 +103,16 @@ export function CartView() {
                     <div className="flex min-w-0 flex-1 flex-col">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-xs font-bold uppercase tracking-wide text-[#7a8a75]">
+                          <p className="text-xs font-bold uppercase tracking-wide text-[#808080]">
                             {p.brand}
                           </p>
-                          <h2 className="line-clamp-2 font-bold leading-snug text-[#21301f]">
+                          <h2 className="line-clamp-2 font-bold leading-snug text-[#111111]">
                             {p.name}
                           </h2>
                           <p className="mt-1 text-sm text-muted-foreground">
                             {p.availability === "in_stock"
-                              ? "En stock — expédition rapide"
-                              : `Sur commande — livraison sous ${p.leadTimeDays ?? 5} jours`}
+                              ? "En stock"
+                              : `Sur commande · ${p.leadTimeDays ?? 5} j`}
                           </p>
                         </div>
                         <button
@@ -138,7 +133,7 @@ export function CartView() {
                           <button
                             type="button"
                             aria-label="Diminuer la quantité"
-                            className="flex h-9 w-9 items-center justify-center rounded-full border border-[#d9cfba] bg-white hover:bg-[#efe7d6]"
+                            className="flex h-9 w-9 items-center justify-center rounded-full border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
                             onClick={() => setQty(p.id, line.qty - 1)}
                           >
                             <Minus className="h-4 w-4" aria-hidden="true" />
@@ -152,18 +147,18 @@ export function CartView() {
                               setQty(p.id, Math.max(1, Math.min(20, Number(e.target.value) || 1)))
                             }
                             aria-label={`Quantité de ${p.name}`}
-                            className="h-9 w-16 rounded-full border-[#d9cfba] text-center font-bold [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                            className="h-9 w-16 rounded-full border-[#d8d4ca] text-center font-bold [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
                           />
                           <button
                             type="button"
                             aria-label="Augmenter la quantité"
-                            className="flex h-9 w-9 items-center justify-center rounded-full border border-[#d9cfba] bg-white hover:bg-[#efe7d6]"
+                            className="flex h-9 w-9 items-center justify-center rounded-full border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
                             onClick={() => setQty(p.id, line.qty + 1)}
                           >
                             <Plus className="h-4 w-4" aria-hidden="true" />
                           </button>
                         </div>
-                        <p className="text-lg font-extrabold text-[#1b5e3f]">
+                        <p className="text-lg font-extrabold text-[#8a6a14]">
                           {formatFCFA(p.price * line.qty)}
                         </p>
                       </div>
@@ -178,8 +173,8 @@ export function CartView() {
         {/* Récapitulatif */}
         <aside aria-label="Récapitulatif de la commande">
           <Reveal direction="right">
-            <div className="rounded-2xl border border-[#e6ddc9] bg-white p-6 shadow-sm lg:sticky lg:top-40">
-              <h2 className="text-lg font-extrabold text-[#123d29]">
+            <div className="rounded-2xl border border-[#e6e3db] bg-white p-6 shadow-sm lg:sticky lg:top-40">
+              <h2 className="text-lg font-extrabold text-[#0b0b0b]">
                 Récapitulatif
               </h2>
               <Separator className="my-4" />
@@ -192,7 +187,7 @@ export function CartView() {
                 <span className="text-muted-foreground">Livraison</span>
                 <span className="font-bold">
                   {freeShipping ? (
-                    <span className="text-[#1b5e3f]">Offerte 🎉</span>
+                    <span className="text-[#8a6a14]">Offerte</span>
                   ) : (
                     `dès ${formatFCFA(cheapestZone)}`
                   )}
@@ -200,12 +195,12 @@ export function CartView() {
               </div>
 
               {!freeShipping && (
-                <div className="mt-4 rounded-xl bg-[#f8e8d4] p-3 text-sm text-[#8a4d10]">
+                <div className="mt-4 rounded-xl bg-[#f4eeda] p-3 text-sm text-[#7a5f10]">
                   <p className="flex items-start gap-2">
                     <Truck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                     Plus que{" "}
                     <span className="font-extrabold">{formatFCFA(missing)}</span>{" "}
-                    pour la livraison offerte partout au Bénin.
+                    pour la livraison offerte.
                   </p>
                 </div>
               )}
@@ -213,19 +208,18 @@ export function CartView() {
               <Separator className="my-4" />
 
               <div className="flex items-baseline justify-between">
-                <span className="font-bold text-[#21301f]">Total estimé</span>
-                <span className="text-2xl font-extrabold text-[#1b5e3f]">
+                <span className="font-bold text-[#111111]">Total estimé</span>
+                <span className="text-2xl font-extrabold text-[#8a6a14]">
                   {formatFCFA(subtotal + (freeShipping ? 0 : cheapestZone))}
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                Estimation avec livraison vers Cotonou ; le montant exact est
-                calculé selon votre adresse à l&apos;étape suivante.
+                Estimation — ajustée à l&apos;étape suivante.
               </p>
 
               <Button
                 size="lg"
-                className="mt-5 h-13 w-full rounded-full bg-[#e8842c] text-base font-extrabold hover:bg-[#d9741f]"
+                className="mt-5 h-13 w-full rounded-full bg-[#d4af37] text-base font-extrabold hover:bg-[#bfa032]"
                 onClick={openCheckout}
               >
                 Passer la commande
@@ -233,8 +227,7 @@ export function CartView() {
               </Button>
 
               <p className="mt-3 text-center text-xs text-muted-foreground">
-                Paiement MTN MoMo, Moov Money, Celtiis Cash, carte bancaire ou
-                à la livraison.
+                MoMo · Moov · Celtiis · Carte · Cash
               </p>
             </div>
           </Reveal>

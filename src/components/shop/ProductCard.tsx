@@ -29,7 +29,7 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <article
-      className="hover-lift group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm focus-within:ring-2 focus-within:ring-[#e8842c]"
+      className="hover-lift group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm focus-within:ring-2 focus-within:ring-[#d4af37]"
       tabIndex={0}
       role="button"
       aria-label={`Voir la fiche produit : ${product.name}`}
@@ -41,7 +41,7 @@ export function ProductCard({ product }: { product: Product }) {
         }
       }}
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-[#f2ecdf]">
+      <div className="relative aspect-[4/3] overflow-hidden bg-[#f1efe9]">
         <SafeImg
           src={imgFor(product.imageKeys[0])}
           alt={product.name}
@@ -54,22 +54,19 @@ export function ProductCard({ product }: { product: Product }) {
           />
         </div>
         {product.oldPrice && (
-          <span className="absolute right-3 top-3 rounded-full bg-[#e8842c] px-2.5 py-1 text-xs font-extrabold text-white shadow">
+          <span className="absolute right-3 top-3 rounded-full bg-[#d4af37] px-2.5 py-1 text-xs font-extrabold text-[#0b0b0b] shadow">
             Promo
           </span>
         )}
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <p className="text-xs font-bold uppercase tracking-wide text-[#7a8a75]">
+        <p className="text-xs font-bold uppercase tracking-wide text-[#808080]">
           {product.brand}
         </p>
         <h3 className="line-clamp-2 text-base font-bold leading-snug text-foreground">
           {product.name}
         </h3>
-        <p className="line-clamp-2 text-sm text-muted-foreground">
-          {product.shortDescription}
-        </p>
 
         <div className="mt-auto flex items-end justify-between gap-2 pt-2">
           <div>
@@ -78,28 +75,19 @@ export function ProductCard({ product }: { product: Product }) {
                 {formatFCFA(product.oldPrice)}
               </p>
             )}
-            <p className="text-lg font-extrabold text-[#1b5e3f]">
+            <p className="text-lg font-extrabold text-[#8a6a14]">
               {formatFCFA(product.price)}
             </p>
           </div>
           <button
             type="button"
             aria-label={`Ajouter ${product.name} au panier`}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1b5e3f] text-white transition-colors hover:bg-[#14503a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8842c] active:scale-95 motion-reduce:transition-none"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#141414] text-white transition-colors hover:bg-[#2e2e2e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37] active:scale-95 motion-reduce:transition-none"
             onClick={quickAdd}
           >
             <ShoppingBasket className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
-
-        <button
-          type="button"
-          className="mt-1 inline-flex items-center gap-1.5 self-start text-sm font-bold text-[#b05f14] hover:underline"
-          onClick={openDetail}
-        >
-          Voir la fiche
-          <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </button>
       </div>
     </article>
   );
@@ -130,14 +118,14 @@ export function CategoryCard({
         alt={cat.name}
         className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#123d29]/85 via-[#123d29]/30 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0b0b0b]/85 via-[#0b0b0b]/30 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
         <h3 className="text-lg font-extrabold text-white sm:text-xl">
           {cat.name}
         </h3>
         <p className="mt-1 line-clamp-2 text-sm text-white/85">{cat.tagline}</p>
-        <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#e8842c] px-3 py-1 text-xs font-extrabold text-white">
-          {count} article{count > 1 ? "s" : ""} à découvrir
+        <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#d4af37] px-3 py-1 text-xs font-extrabold text-[#0b0b0b]">
+          {count} article{count > 1 ? "s" : ""}
           <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
         </span>
       </div>

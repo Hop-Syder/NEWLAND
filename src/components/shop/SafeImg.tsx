@@ -25,7 +25,7 @@ export function SafeImg({
       <div
         role="img"
         aria-label={alt}
-        className={`flex items-center justify-center bg-[linear-gradient(135deg,#efe7d6_0%,#f8f3e7_55%,#f6e3c9_100%)] text-[#8a8163] ${className}`}
+        className={`flex items-center justify-center bg-[linear-gradient(135deg,#eeebe4_0%,#f4eeda_55%,#e9dcb4_100%)] text-[#8a7a4d] ${className}`}
         title={sizesHint}
       >
         <ImageOff className="h-7 w-7 opacity-60" aria-hidden="true" />

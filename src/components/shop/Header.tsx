@@ -52,18 +52,15 @@ function Logo({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8842c]"
+      className="flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37]"
       aria-label="Maison Cauris — retour à l'accueil"
     >
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1b5e3f] text-white shadow-sm">
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#141414] text-white shadow-sm">
         <Shell className="h-5.5 w-5.5" aria-hidden="true" />
       </span>
       <span className="flex flex-col leading-none">
-        <span className="text-lg font-extrabold tracking-tight text-[#1b5e3f]">
+        <span className="text-lg font-extrabold tracking-tight text-[#111111]">
           Maison Cauris
-        </span>
-        <span className="text-[11px] font-semibold text-[#b05f14]">
-          Maison · Cuisine · Bénin
         </span>
       </span>
     </button>
@@ -106,12 +103,6 @@ export function Header() {
     e.preventDefault();
     openCatalog("all");
     // On garde la requête telle quelle ; le catalogue filtre dessus.
-    if (searchQuery.trim()) {
-      toast({
-        title: "Recherche lancée",
-        description: `Résultats pour « ${searchQuery.trim()} »`,
-      });
-    }
   };
 
   const saveAccount = (e: React.FormEvent) => {
@@ -142,10 +133,10 @@ export function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#e6ddc9] bg-[#faf6ee]/95 backdrop-blur supports-[backdrop-filter]:bg-[#faf6ee]/85">
+    <header className="sticky top-0 z-40 border-b border-[#e6e3db] bg-[#faf9f6]/95 backdrop-blur supports-[backdrop-filter]:bg-[#faf9f6]/85">
       {/* Bandeau réassurance */}
-      <div className="hidden bg-[#123d29] px-4 py-1.5 text-center text-xs font-semibold text-[#efe7d6] sm:block">
-        Livraison à Cotonou sous 24–48 h · Paiement Mobile Money · Retours sous 5 jours
+      <div className="hidden bg-[#0b0b0b] px-4 py-1.5 text-center text-xs font-semibold text-[#eeebe4] sm:block">
+        Livraison 24–48 h · Mobile Money · Retours 5 jours
       </div>
 
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-5">
@@ -158,16 +149,16 @@ export function Header() {
           className="relative ml-auto hidden flex-1 max-w-xl md:block"
         >
           <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-[#8a9a86]"
+            className="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-[#8f8f8f]"
             aria-hidden="true"
           />
           <Input
             type="search"
             value={searchQuery}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un produit : blender, marmite, bureau…"
+            placeholder="Rechercher un produit…"
             aria-label="Rechercher un produit"
-            className="h-11 rounded-full border-[#d9cfba] bg-white pl-10 pr-4 text-sm shadow-sm focus-visible:ring-[#e8842c]"
+            className="h-11 rounded-full border-[#d8d4ca] bg-white pl-10 pr-4 text-sm shadow-sm focus-visible:ring-[#d4af37]"
           />
         </form>
 
@@ -176,11 +167,11 @@ export function Header() {
           <DialogTrigger asChild>
             <Button
               variant="ghost"
-              className="hidden h-11 items-center gap-2 rounded-full px-4 text-sm font-bold text-[#21301f] hover:bg-[#efe7d6] sm:inline-flex"
+              className="hidden h-11 items-center gap-2 rounded-full px-4 text-sm font-bold text-[#111111] hover:bg-[#eeebe4] sm:inline-flex"
               aria-label={customer ? "Mon compte client" : "Se connecter / créer un compte"}
             >
               {customer ? (
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#1b5e3f] text-xs font-extrabold text-white">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#141414] text-xs font-extrabold text-white">
                   {customer.name.trim().charAt(0).toUpperCase()}
                 </span>
               ) : (
@@ -193,10 +184,9 @@ export function Header() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-[#1b5e3f]">Espace client</DialogTitle>
+              <DialogTitle className="text-[#8a6a14]">Espace client</DialogTitle>
               <DialogDescription>
-                Renseignez vos coordonnées : elles prérempliront votre commande
-                et vous permettront de suivre vos achats.
+                Vos coordonnées préremplissent vos commandes.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={saveAccount} className="grid gap-4">
@@ -235,7 +225,7 @@ export function Header() {
               <DialogFooter>
                 <Button
                   type="submit"
-                  className="w-full rounded-full bg-[#1b5e3f] hover:bg-[#14503a]"
+                  className="w-full rounded-full bg-[#141414] hover:bg-[#2e2e2e]"
                 >
                   Enregistrer mon profil
                 </Button>
@@ -249,7 +239,7 @@ export function Header() {
           <SheetTrigger asChild>
             <button
               type="button"
-              className="relative inline-flex h-11 items-center gap-2 rounded-full bg-[#1b5e3f] px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#14503a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e8842c]"
+              className="relative inline-flex h-11 items-center gap-2 rounded-full bg-[#141414] px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#2e2e2e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37]"
               aria-label={`Ouvrir le panier (${count} article${count > 1 ? "s" : ""})`}
               onClick={() => setCartOpen(true)}
               data-testid="header-cart"
@@ -258,7 +248,7 @@ export function Header() {
               <span className="hidden sm:inline">Panier</span>
               {count > 0 && (
                 <span
-                  className="absolute -right-1.5 -top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-[#e8842c] px-1 text-xs font-extrabold text-white shadow"
+                  className="absolute -right-1.5 -top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-[#d4af37] px-1 text-xs font-extrabold text-[#0b0b0b] shadow"
                   aria-hidden="true"
                 >
                   {count}
@@ -268,10 +258,10 @@ export function Header() {
           </SheetTrigger>
           <SheetContent
             side="right"
-            className="flex w-full flex-col gap-0 border-[#e6ddc9] bg-[#faf6ee] p-0 sm:max-w-md"
+            className="flex w-full flex-col gap-0 border-[#e6e3db] bg-[#faf9f6] p-0 sm:max-w-md"
           >
-            <SheetHeader className="border-b border-[#e6ddc9] bg-[#faf6ee] p-5">
-              <SheetTitle className="flex items-center gap-2 text-[#1b5e3f]">
+            <SheetHeader className="border-b border-[#e6e3db] bg-[#faf9f6] p-5">
+              <SheetTitle className="flex items-center gap-2 text-[#8a6a14]">
                 <ShoppingBasket className="h-5 w-5" aria-hidden="true" />
                 Mon panier ({count})
               </SheetTitle>
@@ -282,15 +272,12 @@ export function Header() {
 
             {cart.length === 0 ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#efe7d6]">
-                  <ShoppingBasket className="h-8 w-8 text-[#8a9a86]" aria-hidden="true" />
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#eeebe4]">
+                  <ShoppingBasket className="h-8 w-8 text-[#8f8f8f]" aria-hidden="true" />
                 </span>
-                <p className="font-bold text-[#21301f]">Votre panier est vide</p>
-                <p className="text-sm text-muted-foreground">
-                  Parcourez nos catégories et ajoutez vos premiers produits utiles.
-                </p>
+                <p className="font-bold text-[#111111]">Votre panier est vide</p>
                 <Button
-                  className="mt-2 rounded-full bg-[#e8842c] hover:bg-[#d9741f]"
+                  className="mt-2 rounded-full bg-[#d4af37] hover:bg-[#bfa032]"
                   onClick={() => {
                     setCartOpen(false);
                     openCatalog("all");
@@ -309,7 +296,7 @@ export function Header() {
                       return (
                         <li
                           key={line.productId}
-                          className="flex gap-3 rounded-xl border border-[#e6ddc9] bg-white p-3"
+                          className="flex gap-3 rounded-xl border border-[#e6e3db] bg-white p-3"
                         >
                           <SafeImg
                             src={imgFor(p.imageKeys[0])}
@@ -319,7 +306,7 @@ export function Header() {
                           <div className="flex min-w-0 flex-1 flex-col">
                             <button
                               type="button"
-                              className="line-clamp-2 text-left text-sm font-bold leading-snug text-[#21301f] hover:underline"
+                              className="line-clamp-2 text-left text-sm font-bold leading-snug text-[#111111] hover:underline"
                               onClick={() => {
                                 setCartOpen(false);
                                 openProduct(p.id);
@@ -327,7 +314,7 @@ export function Header() {
                             >
                               {p.name}
                             </button>
-                            <p className="mt-0.5 text-sm font-extrabold text-[#1b5e3f]">
+                            <p className="mt-0.5 text-sm font-extrabold text-[#8a6a14]">
                               {formatFCFA(p.price)}
                             </p>
                             <div className="mt-auto flex items-center justify-between pt-1">
@@ -335,7 +322,7 @@ export function Header() {
                                 <button
                                   type="button"
                                   aria-label={`Retirer un exemplaire de ${p.name}`}
-                                  className="flex h-7 w-7 items-center justify-center rounded-full border border-[#d9cfba] bg-white hover:bg-[#efe7d6]"
+                                  className="flex h-7 w-7 items-center justify-center rounded-full border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
                                   onClick={() => setQty(p.id, line.qty - 1)}
                                 >
                                   <Minus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -349,7 +336,7 @@ export function Header() {
                                 <button
                                   type="button"
                                   aria-label={`Ajouter un exemplaire de ${p.name}`}
-                                  className="flex h-7 w-7 items-center justify-center rounded-full border border-[#d9cfba] bg-white hover:bg-[#efe7d6]"
+                                  className="flex h-7 w-7 items-center justify-center rounded-full border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
                                   onClick={() => setQty(p.id, line.qty + 1)}
                                 >
                                   <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -377,25 +364,24 @@ export function Header() {
                   </ul>
                 </ScrollArea>
 
-                <div className="border-t border-[#e6ddc9] bg-white p-5">
+                <div className="border-t border-[#e6e3db] bg-white p-5">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Sous-total</span>
-                    <span className="text-lg font-extrabold text-[#1b5e3f]">
+                    <span className="text-lg font-extrabold text-[#8a6a14]">
                       {formatFCFA(subtotal)}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Frais de livraison calculés à la commande. Livraison offerte
-                    dès 100 000 FCFA d&apos;achat.
+                    Livraison offerte dès 100 000 F.
                   </p>
                   <Button
-                    className="mt-3 h-12 w-full rounded-full bg-[#e8842c] text-base font-extrabold hover:bg-[#d9741f]"
+                    className="mt-3 h-12 w-full rounded-full bg-[#d4af37] text-base font-extrabold hover:bg-[#bfa032]"
                     onClick={() => {
                       setCartOpen(false);
                       openCart();
                     }}
                   >
-                    Voir le panier et commander
+                    Commander
                     <ArrowRight className="h-5 w-5" aria-hidden="true" />
                   </Button>
                 </div>
@@ -407,7 +393,7 @@ export function Header() {
         {/* Menu mobile */}
         <button
           type="button"
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d9cfba] bg-white text-[#21301f] md:hidden"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d4ca] bg-white text-[#111111] md:hidden"
           aria-label="Ouvrir le menu"
           aria-expanded={mobileOpen}
           onClick={() => setMobileOpen((v) => !v)}
@@ -423,7 +409,7 @@ export function Header() {
       {/* Navigation catégories (desktop) */}
       <nav
         aria-label="Catégories"
-        className="hidden border-t border-[#efe7d6] md:block"
+        className="hidden border-t border-[#eeebe4] md:block"
       >
         <div className="mx-auto flex max-w-7xl items-center gap-1 px-4 py-1.5">
           {navItems.map((item) => (
@@ -434,16 +420,16 @@ export function Header() {
               aria-current={item.active ? "page" : undefined}
               className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
                 item.active
-                  ? "bg-[#1b5e3f] text-white"
-                  : "text-[#21301f] hover:bg-[#efe7d6]"
+                  ? "bg-[#141414] text-white"
+                  : "text-[#111111] hover:bg-[#eeebe4]"
               }`}
             >
               {item.label}
             </button>
           ))}
-          <span className="ml-auto hidden items-center gap-2 text-xs font-semibold text-[#7a8a75] lg:flex">
+          <span className="ml-auto hidden items-center gap-2 text-xs font-semibold text-[#808080] lg:flex">
             <Separator orientation="vertical" className="h-4" />
-            {PRODUCTS.length} produits sélectionnés pour vous
+            {PRODUCTS.length} produits
           </span>
         </div>
       </nav>
@@ -452,11 +438,11 @@ export function Header() {
       {mobileOpen && (
         <nav
           aria-label="Menu mobile"
-          className="border-t border-[#e6ddc9] bg-[#faf6ee] px-4 pb-4 pt-2 md:hidden"
+          className="border-t border-[#e6e3db] bg-[#faf9f6] px-4 pb-4 pt-2 md:hidden"
         >
           <form onSubmit={submitSearch} role="search" className="relative mb-2">
             <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-[#8a9a86]"
+              className="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-[#8f8f8f]"
               aria-hidden="true"
             />
             <Input
@@ -465,7 +451,7 @@ export function Header() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher un produit…"
               aria-label="Rechercher un produit"
-              className="h-11 rounded-full border-[#d9cfba] bg-white pl-10"
+              className="h-11 rounded-full border-[#d8d4ca] bg-white pl-10"
             />
           </form>
           <ul className="flex flex-col gap-1">
@@ -479,8 +465,8 @@ export function Header() {
                   }}
                   className={`w-full rounded-xl px-4 py-3 text-left text-sm font-bold ${
                     item.active
-                      ? "bg-[#1b5e3f] text-white"
-                      : "bg-white text-[#21301f]"
+                      ? "bg-[#141414] text-white"
+                      : "bg-white text-[#111111]"
                   }`}
                 >
                   {item.label}
@@ -494,7 +480,7 @@ export function Header() {
                   openAccount(true);
                   setMobileOpen(false);
                 }}
-                className="flex w-full items-center gap-2 rounded-xl bg-white px-4 py-3 text-left text-sm font-bold text-[#21301f]"
+                className="flex w-full items-center gap-2 rounded-xl bg-white px-4 py-3 text-left text-sm font-bold text-[#111111]"
               >
                 <UserRound className="h-5 w-5" aria-hidden="true" />
                 {customer ? "Mon compte" : "Se connecter / créer un compte"}

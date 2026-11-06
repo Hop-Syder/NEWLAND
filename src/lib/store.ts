@@ -43,27 +43,27 @@ export const PAYMENT_METHODS: {
   {
     id: "mtn_momo",
     label: "MTN MoMo",
-    hint: "Vous recevrez une demande de paiement sur votre numéro MTN.",
+    hint: "Demande de paiement sur votre numéro MTN.",
   },
   {
     id: "moov_money",
     label: "Moov Money",
-    hint: "Vous recevrez une demande de paiement sur votre numéro Moov.",
+    hint: "Demande de paiement sur votre numéro Moov.",
   },
   {
     id: "celtiis_cash",
     label: "Celtiis Cash",
-    hint: "Paiement via votre compte Celtiis Cash.",
+    hint: "Via votre compte Celtiis.",
   },
   {
     id: "card",
     label: "Carte bancaire (Visa / Mastercard)",
-    hint: "Paiement sécurisé via un agrégateur (type CinetPay) à la confirmation.",
+    hint: "Paiement sécurisé via CinetPay.",
   },
   {
     id: "cash_on_delivery",
     label: "Paiement à la livraison (espèces)",
-    hint: "Payez en espèces à la réception de votre commande.",
+    hint: "Espèces à la réception.",
   },
 ];
 

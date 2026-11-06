@@ -7,10 +7,8 @@ import {
   Truck,
   ShieldCheck,
   Wallet,
-  Phone,
   Minus,
   Plus,
-  MapPin,
   CheckCircle2,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -48,11 +46,11 @@ export function ProductView() {
   if (!product) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 px-4 py-24 text-center">
-        <p className="text-xl font-extrabold text-[#21301f]">
+        <p className="text-xl font-extrabold text-[#111111]">
           Ce produit n&apos;existe pas (ou plus).
         </p>
         <Button
-          className="rounded-full bg-[#e8842c] hover:bg-[#d9741f]"
+          className="rounded-full bg-[#d4af37] hover:bg-[#bfa032]"
           onClick={() => openCatalog("all")}
         >
           Retour au catalogue
@@ -82,7 +80,7 @@ export function ProductView() {
           <li>
             <button
               type="button"
-              className="inline-flex items-center gap-1 font-bold text-[#1b5e3f] hover:underline"
+              className="inline-flex items-center gap-1 font-bold text-[#8a6a14] hover:underline"
               onClick={goHome}
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -93,7 +91,7 @@ export function ProductView() {
           <li>
             <button
               type="button"
-              className="font-bold text-[#1b5e3f] hover:underline"
+              className="font-bold text-[#8a6a14] hover:underline"
               onClick={() => openCatalog(product.category)}
             >
               {category?.name}
@@ -110,7 +108,7 @@ export function ProductView() {
         {/* Galerie */}
         <Reveal direction="left">
           <div>
-            <div className="relative overflow-hidden rounded-3xl border border-[#e6ddc9] bg-white shadow-sm">
+            <div className="relative overflow-hidden rounded-3xl border border-[#e6e3db] bg-white shadow-sm">
               <SafeImg
                 src={mainImage}
                 alt={product.name}
@@ -135,8 +133,8 @@ export function ProductView() {
                     onClick={() => setImageIndex(i)}
                     className={`overflow-hidden rounded-xl border-2 transition-colors ${
                       i === imageIndex
-                        ? "border-[#e8842c]"
-                        : "border-transparent hover:border-[#d9cfba]"
+                        ? "border-[#d4af37]"
+                        : "border-transparent hover:border-[#d8d4ca]"
                     }`}
                   >
                     <SafeImg
@@ -155,10 +153,10 @@ export function ProductView() {
         <Reveal direction="right">
           <div className="flex flex-col gap-4">
             <div>
-              <p className="text-sm font-bold uppercase tracking-wide text-[#7a8a75]">
+              <p className="text-sm font-bold uppercase tracking-wide text-[#808080]">
                 {product.brand} · {category?.name}
               </p>
-              <h1 className="mt-1 text-2xl font-extrabold leading-snug text-[#123d29] sm:text-3xl">
+              <h1 className="mt-1 text-2xl font-extrabold leading-snug text-[#0b0b0b] sm:text-3xl">
                 {product.name}
               </h1>
             </div>
@@ -169,35 +167,35 @@ export function ProductView() {
                   {formatFCFA(product.oldPrice)}
                 </span>
               )}
-              <span className="text-3xl font-extrabold text-[#1b5e3f]">
+              <span className="text-3xl font-extrabold text-[#8a6a14]">
                 {formatFCFA(product.price)}
               </span>
               {product.oldPrice && (
-                <span className="rounded-full bg-[#e8842c] px-2.5 py-1 text-xs font-extrabold text-white">
+                <span className="rounded-full bg-[#d4af37] px-2.5 py-1 text-xs font-extrabold text-[#0b0b0b]">
                   Économisez {formatFCFA(product.oldPrice - product.price)}
                 </span>
               )}
             </div>
 
-            <p className="text-base leading-relaxed text-[#43503f]">
+            <p className="text-base leading-relaxed text-[#3d3d3d]">
               {product.description}
             </p>
 
             {/* Caractéristiques */}
-            <section aria-labelledby="caract-title" className="rounded-2xl border border-[#e6ddc9] bg-white p-5">
+            <section aria-labelledby="caract-title" className="rounded-2xl border border-[#e6e3db] bg-white p-5">
               <h2
                 id="caract-title"
-                className="flex items-center gap-2 text-base font-extrabold text-[#1b5e3f]"
+                className="flex items-center gap-2 text-base font-extrabold text-[#8a6a14]"
               >
                 <CheckCircle2 className="h-4.5 w-4.5" aria-hidden="true" />
-                Caractéristiques principales
+                Caractéristiques
               </h2>
               <ul className="mt-3 flex flex-col gap-2">
                 {product.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-[#43503f]">
+                  <li key={f} className="flex items-start gap-2 text-sm text-[#3d3d3d]">
                     <span
                       aria-hidden="true"
-                      className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#e8842c]"
+                      className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#d4af37]"
                     />
                     {f}
                   </li>
@@ -206,12 +204,12 @@ export function ProductView() {
             </section>
 
             {/* Quantité + ajout panier */}
-            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#e6ddc9] bg-white p-4">
+            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#e6e3db] bg-white p-4">
               <div className="flex items-center gap-2" role="group" aria-label="Quantité">
                 <button
                   type="button"
                   aria-label="Diminuer la quantité"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d9cfba] bg-white hover:bg-[#efe7d6]"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
                 >
                   <Minus className="h-4 w-4" aria-hidden="true" />
@@ -225,7 +223,7 @@ export function ProductView() {
                 <button
                   type="button"
                   aria-label="Augmenter la quantité"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d9cfba] bg-white hover:bg-[#efe7d6]"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
                   onClick={() => setQty((q) => Math.min(20, q + 1))}
                 >
                   <Plus className="h-4 w-4" aria-hidden="true" />
@@ -234,7 +232,7 @@ export function ProductView() {
 
               <Button
                 size="lg"
-                className="h-12 min-w-40 flex-1 rounded-full bg-[#e8842c] text-base font-extrabold hover:bg-[#d9741f]"
+                className="h-12 min-w-40 flex-1 rounded-full bg-[#d4af37] text-base font-extrabold hover:bg-[#bfa032]"
                 onClick={() => addNow(false)}
               >
                 <ShoppingBasket className="h-5 w-5" aria-hidden="true" />
@@ -243,7 +241,7 @@ export function ProductView() {
               <Button
                 size="lg"
                 variant="outline"
-                className="h-12 rounded-full border-[#1b5e3f] text-base font-bold text-[#1b5e3f] hover:bg-[#e4efe4]"
+                className="h-12 rounded-full border-[#111111] text-base font-bold text-[#8a6a14] hover:bg-[#f4eeda]"
                 onClick={() => addNow(true)}
               >
                 Commander
@@ -251,34 +249,24 @@ export function ProductView() {
             </div>
 
             {/* Informations pratiques */}
-            <section aria-labelledby="pratique-title" className="rounded-2xl bg-[#f2ecdf]/70 p-5">
-              <h2 id="pratique-title" className="text-base font-extrabold text-[#123d29]">
-                Informations pratiques
+            <section aria-labelledby="pratique-title" className="rounded-2xl bg-[#f1efe9]/70 p-5">
+              <h2 id="pratique-title" className="text-base font-extrabold text-[#0b0b0b]">
+                Infos pratiques
               </h2>
-              <ul className="mt-3 grid gap-2.5 text-sm text-[#43503f]">
+              <ul className="mt-3 grid gap-2.5 text-sm text-[#3d3d3d]">
                 <li className="flex items-start gap-2.5">
-                  <Truck className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#1b5e3f]" aria-hidden="true" />
+                  <Truck className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#8a6a14]" aria-hidden="true" />
                   {product.availability === "in_stock"
-                    ? "Expédition sous 24–48 h à Cotonou ; 2 à 5 jours pour les autres villes."
-                    : `Article préparé à la commande : livraison estimée sous ${product.leadTimeDays ?? 5} jours.`}
+                    ? "Expédition 24–48 h à Cotonou · 2–5 j ailleurs."
+                    : `Livraison estimée sous ${product.leadTimeDays ?? 5} jours.`}
                 </li>
                 <li className="flex items-start gap-2.5">
-                  <Wallet className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#1b5e3f]" aria-hidden="true" />
-                  Paiement : MTN MoMo, Moov Money, Celtiis Cash, carte bancaire ou espèces à la livraison.
+                  <Wallet className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#8a6a14]" aria-hidden="true" />
+                  MoMo · Moov · Celtiis · Carte · Cash à la livraison.
                 </li>
                 <li className="flex items-start gap-2.5">
-                  <ShieldCheck className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#1b5e3f]" aria-hidden="true" />
-                  {product.practical.map((p) => (
-                    <span key={p}>{p}</span>
-                  ))}
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <Phone className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#1b5e3f]" aria-hidden="true" />
-                  Une question ? WhatsApp +229 01 97 00 00 00 — réponse sous 1 h.
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <MapPin className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#1b5e3f]" aria-hidden="true" />
-                  Retrait possible à notre point relais de Cotonou (Fidjrossè).
+                  <ShieldCheck className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#8a6a14]" aria-hidden="true" />
+                  {product.practical.slice(0, 2).join(" · ")}
                 </li>
               </ul>
             </section>
@@ -297,7 +285,7 @@ export function ProductView() {
         <Reveal>
           <h2
             id="similaires-title"
-            className="mb-5 text-2xl font-extrabold text-[#123d29]"
+            className="mb-5 text-2xl font-extrabold text-[#0b0b0b]"
           >
             Vous aimerez aussi
           </h2>

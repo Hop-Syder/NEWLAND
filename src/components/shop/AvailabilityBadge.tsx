@@ -12,14 +12,14 @@ export function AvailabilityBadge({
 }) {
   if (availability === "in_stock") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e4efe4] px-2.5 py-1 text-xs font-bold text-[#1b5e3f]">
-        <PackageCheck className="h-3.5 w-3.5" aria-hidden="true" />
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0b0b0b] px-2.5 py-1 text-xs font-bold text-white">
+        <PackageCheck className="h-3.5 w-3.5 text-[#d4af37]" aria-hidden="true" />
         En stock
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f8e8d4] px-2.5 py-1 text-xs font-bold text-[#b05f14]">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#d4af37] px-2.5 py-1 text-xs font-bold text-[#0b0b0b]">
       <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
       Sur commande{leadTimeDays ? ` · ${leadTimeDays} j` : ""}
     </span>
