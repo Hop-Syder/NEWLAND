@@ -1,18 +1,33 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito_Sans, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
-const nunito = Nunito_Sans({
+// Polices auto-hébergées (woff2 variables, subset latin) — évite le bug
+// Turbopack « next/font/google queries have exactly one entry » et fonctionne
+// hors ligne. Mêmes variables CSS qu'avant : --font-nunito / --font-geist-mono.
+const nunito = localFont({
   variable: "--font-nunito",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
+  src: [
+    {
+      path: "./fonts/NunitoSans-Variable.woff2",
+      weight: "200 1000",
+      style: "normal",
+    },
+  ],
   display: "swap",
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  src: [
+    {
+      path: "./fonts/GeistMono-Variable.woff2",
+      weight: "100 900",
+      style: "normal",
+    },
+  ],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -44,10 +59,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" suppressHydrationWarning>
-      <body
-        className={`${nunito.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
-      >
+    <html
+      lang="fr"
+      suppressHydrationWarning
+      className={`${nunito.variable} ${geistMono.variable}`}
+    >
+      <body className="antialiased bg-background text-foreground">
         {children}
         <Toaster />
       </body>
