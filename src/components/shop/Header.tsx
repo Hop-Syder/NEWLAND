@@ -51,10 +51,10 @@ function Logo({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37]"
+      className="flex items-center gap-2.5 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37]"
       aria-label="Maison Cauris — retour à l'accueil"
     >
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#141414] text-white shadow-sm">
+      <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#141414] text-white shadow-sm">
         <Shell className="h-5.5 w-5.5" aria-hidden="true" />
       </span>
       <span className="flex flex-col leading-none">
@@ -159,7 +159,7 @@ export function Header() {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher un produit…"
             aria-label="Rechercher un produit"
-            className="h-11 rounded-full border-[#d8d4ca] bg-white pl-10 pr-4 text-sm shadow-sm focus-visible:ring-[#d4af37]"
+            className="h-11 rounded-md border-[#d8d4ca] bg-white pl-10 pr-4 text-sm shadow-sm focus-visible:ring-[#d4af37]"
           />
         </form>
 
@@ -168,11 +168,11 @@ export function Header() {
           <DialogTrigger asChild>
             <Button
               variant="ghost"
-              className="hidden h-11 items-center gap-2 rounded-full px-4 text-sm font-bold text-[#111111] hover:bg-[#eeebe4] sm:inline-flex"
+              className="hidden h-11 items-center gap-2 rounded-md px-4 text-sm font-bold text-[#111111] hover:bg-[#eeebe4] sm:inline-flex"
               aria-label={customer ? "Mon compte client" : "Se connecter / créer un compte"}
             >
               {customer ? (
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#141414] text-xs font-extrabold text-white">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[#141414] text-xs font-extrabold text-white">
                   {customer.name.trim().charAt(0).toUpperCase()}
                 </span>
               ) : (
@@ -226,7 +226,7 @@ export function Header() {
               <DialogFooter>
                 <Button
                   type="submit"
-                  className="w-full rounded-full bg-[#141414] text-white hover:bg-[#2e2e2e]"
+                  className="w-full rounded-md bg-[#141414] text-white hover:bg-[#2e2e2e]"
                 >
                   Enregistrer mon profil
                 </Button>
@@ -240,7 +240,7 @@ export function Header() {
           <SheetTrigger asChild>
             <button
               type="button"
-              className="relative hidden h-11 items-center gap-2 rounded-full bg-[#141414] px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#2e2e2e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37] sm:inline-flex"
+              className="relative hidden h-11 items-center gap-2 rounded-md bg-[#141414] px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#2e2e2e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37] sm:inline-flex"
               aria-label={`Ouvrir le panier (${count} article${count > 1 ? "s" : ""})`}
               onClick={() => setCartOpen(true)}
               data-testid="header-cart"
@@ -249,7 +249,7 @@ export function Header() {
               <span className="hidden sm:inline">Panier</span>
               {count > 0 && (
                 <span
-                  className="absolute -right-1.5 -top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-[#d4af37] px-1 text-xs font-extrabold text-[#0b0b0b] shadow"
+                  className="absolute -right-1.5 -top-1.5 flex h-6 min-w-6 items-center justify-center rounded-md bg-[#d4af37] px-1 text-xs font-extrabold text-[#0b0b0b] shadow"
                   aria-hidden="true"
                 >
                   {count}
@@ -273,12 +273,12 @@ export function Header() {
 
             {cart.length === 0 ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#eeebe4]">
+                <span className="flex h-16 w-16 items-center justify-center rounded-md bg-[#eeebe4]">
                   <ShoppingBasket className="h-8 w-8 text-[#8f8f8f]" aria-hidden="true" />
                 </span>
                 <p className="font-bold text-[#111111]">Votre panier est vide</p>
                 <Button
-                  className="mt-2 rounded-full bg-[#d4af37] hover:bg-[#bfa032]"
+                  className="mt-2 rounded-md bg-[#d4af37] hover:bg-[#bfa032]"
                   onClick={() => {
                     setCartOpen(false);
                     openCatalog("all");
@@ -297,12 +297,12 @@ export function Header() {
                       return (
                         <li
                           key={line.productId}
-                          className="flex gap-3 rounded-xl border border-[#e6e3db] bg-white p-3"
+                          className="flex gap-3 rounded-md border border-[#e6e3db] bg-white p-3"
                         >
                           <SafeImg
                             src={imgFor(p.imageKeys[0])}
                             alt={p.name}
-                            className="h-16 w-16 shrink-0 rounded-lg object-cover"
+                            className="h-16 w-16 shrink-0 rounded-md object-cover"
                           />
                           <div className="flex min-w-0 flex-1 flex-col">
                             <button
@@ -323,7 +323,7 @@ export function Header() {
                                 <button
                                   type="button"
                                   aria-label={`Retirer un exemplaire de ${p.name}`}
-                                  className="flex h-7 w-7 items-center justify-center rounded-full border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
+                                  className="flex h-7 w-7 items-center justify-center rounded-md border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
                                   onClick={() => setQty(p.id, line.qty - 1)}
                                 >
                                   <Minus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -337,7 +337,7 @@ export function Header() {
                                 <button
                                   type="button"
                                   aria-label={`Ajouter un exemplaire de ${p.name}`}
-                                  className="flex h-7 w-7 items-center justify-center rounded-full border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
+                                  className="flex h-7 w-7 items-center justify-center rounded-md border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
                                   onClick={() => setQty(p.id, line.qty + 1)}
                                 >
                                   <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -346,7 +346,7 @@ export function Header() {
                               <button
                                 type="button"
                                 aria-label={`Retirer ${p.name} du panier`}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#c6482f] hover:bg-[#f8e2dc]"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#c6482f] hover:bg-[#f8e2dc]"
                                 onClick={() => {
                                   removeFromCart(p.id);
                                   toast({
@@ -376,7 +376,7 @@ export function Header() {
                     Livraison offerte dès 100 000 F.
                   </p>
                   <Button
-                    className="mt-3 h-12 w-full rounded-full bg-[#d4af37] text-base font-extrabold hover:bg-[#bfa032]"
+                    className="mt-3 h-12 w-full rounded-md bg-[#d4af37] text-base font-extrabold hover:bg-[#bfa032]"
                     onClick={() => {
                       setCartOpen(false);
                       openCart();
@@ -406,7 +406,7 @@ export function Header() {
               type="button"
               onClick={item.action}
               aria-current={item.active ? "page" : undefined}
-              className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
+              className={`rounded-md px-4 py-1.5 text-sm font-bold transition-colors ${
                 item.active
                   ? "bg-[#141414] text-white"
                   : "text-[#111111] hover:bg-[#eeebe4]"

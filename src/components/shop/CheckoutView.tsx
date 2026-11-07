@@ -109,7 +109,7 @@ export function CheckoutView() {
           Votre panier est vide
         </h1>
         <Button
-          className="rounded-full bg-[#d4af37] font-extrabold hover:bg-[#bfa032]"
+          className="rounded-md bg-[#d4af37] font-extrabold hover:bg-[#bfa032]"
           onClick={() => openCatalog("all")}
         >
           Voir le catalogue
@@ -186,7 +186,7 @@ export function CheckoutView() {
           </div>
           <Button
             variant="ghost"
-            className="rounded-full font-bold text-[#8a6a14] hover:bg-[#f4eeda]"
+            className="rounded-md font-bold text-[#8a6a14] hover:bg-[#f4eeda]"
             onClick={openCart}
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -201,13 +201,13 @@ export function CheckoutView() {
           <Reveal>
             <section
               aria-labelledby="coord-title"
-              className="rounded-2xl border border-[#e6e3db] bg-white p-6 shadow-sm"
+              className="rounded-md border border-[#e6e3db] bg-white p-6 shadow-sm"
             >
               <h2
                 id="coord-title"
                 className="flex items-center gap-2.5 text-lg font-extrabold text-[#8a6a14]"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f4eeda] text-sm font-extrabold text-[#8a6a14]">
+                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[#f4eeda] text-sm font-extrabold text-[#8a6a14]">
                   1
                 </span>
                 <UserRound className="h-5 w-5" aria-hidden="true" />
@@ -222,7 +222,7 @@ export function CheckoutView() {
                     onChange={(e) => set("name", e.target.value)}
                     placeholder="Ex. Hounkpatin Bernard"
                     autoComplete="name"
-                    className="h-11 rounded-xl border-[#d8d4ca]"
+                    className="h-11 rounded-md border-[#d8d4ca]"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -234,7 +234,7 @@ export function CheckoutView() {
                     onChange={(e) => set("phone", e.target.value)}
                     placeholder="+229 01 97 00 00 00"
                     autoComplete="tel"
-                    className="h-11 rounded-xl border-[#d8d4ca]"
+                    className="h-11 rounded-md border-[#d8d4ca]"
                   />
                 </div>
                 <div className="grid gap-2 sm:col-span-2">
@@ -246,7 +246,7 @@ export function CheckoutView() {
                     onChange={(e) => set("email", e.target.value)}
                     placeholder="vous@exemple.com"
                     autoComplete="email"
-                    className="h-11 rounded-xl border-[#d8d4ca]"
+                    className="h-11 rounded-md border-[#d8d4ca]"
                   />
                 </div>
               </div>
@@ -257,13 +257,13 @@ export function CheckoutView() {
           <Reveal>
             <section
               aria-labelledby="livraison-title"
-              className="rounded-2xl border border-[#e6e3db] bg-white p-6 shadow-sm"
+              className="rounded-md border border-[#e6e3db] bg-white p-6 shadow-sm"
             >
               <h2
                 id="livraison-title"
                 className="flex items-center gap-2.5 text-lg font-extrabold text-[#8a6a14]"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f4eeda] text-sm font-extrabold text-[#8a6a14]">
+                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[#f4eeda] text-sm font-extrabold text-[#8a6a14]">
                   2
                 </span>
                 <MapPin className="h-5 w-5" aria-hidden="true" />
@@ -275,7 +275,7 @@ export function CheckoutView() {
                   <Select value={form.city} onValueChange={(v) => set("city", v)}>
                     <SelectTrigger
                       id="co-city"
-                      className="h-11 rounded-xl border-[#d8d4ca]"
+                      className="h-11 rounded-md border-[#d8d4ca]"
                       aria-label="Choisir la ville de livraison"
                     >
                       <SelectValue placeholder="Choisir une ville" />
@@ -296,7 +296,7 @@ export function CheckoutView() {
                     value={form.district}
                     onChange={(e) => set("district", e.target.value)}
                     placeholder="Ex. Cadjèhoun, Fidjrossè, Zogbo…"
-                    className="h-11 rounded-xl border-[#d8d4ca]"
+                    className="h-11 rounded-md border-[#d8d4ca]"
                   />
                 </div>
                 <div className="grid gap-2 sm:col-span-2">
@@ -307,7 +307,7 @@ export function CheckoutView() {
                     onChange={(e) => set("address", e.target.value)}
                     placeholder="Ex. Rue 12.084, maison bleue après la pharmacie"
                     autoComplete="street-address"
-                    className="h-11 rounded-xl border-[#d8d4ca]"
+                    className="h-11 rounded-md border-[#d8d4ca]"
                   />
                 </div>
                 <div className="grid gap-2 sm:col-span-2">
@@ -317,7 +317,7 @@ export function CheckoutView() {
                     value={form.landmark}
                     onChange={(e) => set("landmark", e.target.value)}
                     placeholder="Ex. en face du carrefour Sainte Rita"
-                    className="h-11 rounded-xl border-[#d8d4ca]"
+                    className="h-11 rounded-md border-[#d8d4ca]"
                   />
                 </div>
                 <div className="grid gap-2 sm:col-span-2">
@@ -327,12 +327,12 @@ export function CheckoutView() {
                     value={form.notes}
                     onChange={(e) => set("notes", e.target.value)}
                     placeholder="Ex. appeler avant d'arriver, livrer après 17 h…"
-                    className="min-h-20 rounded-xl border-[#d8d4ca]"
+                    className="min-h-20 rounded-md border-[#d8d4ca]"
                   />
                 </div>
               </div>
 
-              <div className="mt-4 rounded-xl bg-[#f1efe9]/70 p-4 text-sm text-[#3d3d3d]">
+              <div className="mt-4 rounded-md bg-[#f1efe9]/70 p-4 text-sm text-[#3d3d3d]">
                 <p>
                   {zone.label} · {zone.eta} ·{" "}
                   {freeShipping ? (
@@ -349,13 +349,13 @@ export function CheckoutView() {
           <Reveal>
             <section
               aria-labelledby="paiement-title"
-              className="rounded-2xl border border-[#e6e3db] bg-white p-6 shadow-sm"
+              className="rounded-md border border-[#e6e3db] bg-white p-6 shadow-sm"
             >
               <h2
                 id="paiement-title"
                 className="flex items-center gap-2.5 text-lg font-extrabold text-[#8a6a14]"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f4eeda] text-sm font-extrabold text-[#8a6a14]">
+                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[#f4eeda] text-sm font-extrabold text-[#8a6a14]">
                   3
                 </span>
                 <Wallet className="h-5 w-5" aria-hidden="true" />
@@ -371,7 +371,7 @@ export function CheckoutView() {
                   <div key={m.id}>
                     <Label
                       htmlFor={`pay-${m.id}`}
-                      className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors ${
+                      className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 transition-colors ${
                         form.payment === m.id
                           ? "border-[#d4af37] bg-[#f4eeda]/60"
                           : "border-[#e6e3db] bg-white hover:bg-[#f1efe9]/50"
@@ -408,7 +408,7 @@ export function CheckoutView() {
                     value={form.momoNumber}
                     onChange={(e) => set("momoNumber", e.target.value)}
                     placeholder="Ex. +229 01 96 00 00 00"
-                    className="h-11 rounded-xl border-[#d8d4ca]"
+                    className="h-11 rounded-md border-[#d8d4ca]"
                   />
                   <p className="text-xs text-muted-foreground">
                     Vous recevrez une demande de paiement sur ce numéro.
@@ -417,7 +417,7 @@ export function CheckoutView() {
               )}
 
               {form.payment === "card" && (
-                <div className="mt-4 flex items-start gap-3 rounded-xl bg-[#f1efe9]/70 p-4 text-sm text-[#3d3d3d]">
+                <div className="mt-4 flex items-start gap-3 rounded-md bg-[#f1efe9]/70 p-4 text-sm text-[#3d3d3d]">
                   <CreditCard className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#8a6a14]" aria-hidden="true" />
                   <p>
                     Paiement sécurisé via notre partenaire (type CinetPay).
@@ -432,7 +432,7 @@ export function CheckoutView() {
         {/* Récapitulatif */}
         <aside aria-label="Récapitulatif de la commande">
           <Reveal direction="right">
-            <div className="rounded-2xl border border-[#e6e3db] bg-white p-6 shadow-sm lg:sticky lg:top-40">
+            <div className="rounded-md border border-[#e6e3db] bg-white p-6 shadow-sm lg:sticky lg:top-40">
               <h2 className="text-lg font-extrabold text-[#0b0b0b]">
                 Votre commande
               </h2>
@@ -447,7 +447,7 @@ export function CheckoutView() {
                       <SafeImg
                         src={imgFor(p.imageKeys[0])}
                         alt=""
-                        className="h-14 w-14 shrink-0 rounded-lg object-cover"
+                        className="h-14 w-14 shrink-0 rounded-md object-cover"
                       />
                       <div className="min-w-0 flex-1">
                         <p className="line-clamp-2 text-sm font-bold leading-snug">
@@ -493,13 +493,13 @@ export function CheckoutView() {
                 type="submit"
                 size="lg"
                 disabled={submitting}
-                className="mt-5 h-13 w-full rounded-full bg-[#d4af37] text-base font-extrabold hover:bg-[#bfa032] disabled:opacity-60"
+                className="mt-5 h-13 w-full rounded-md bg-[#d4af37] text-base font-extrabold hover:bg-[#bfa032] disabled:opacity-60"
               >
                 {submitting ? (
                   <>
                     <span
                       aria-hidden="true"
-                      className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none"
+                      className="h-5 w-5 animate-spin rounded-md border-2 border-white/40 border-t-white motion-reduce:animate-none"
                     />
                     Traitement…
                   </>

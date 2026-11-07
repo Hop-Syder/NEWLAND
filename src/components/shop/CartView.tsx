@@ -43,7 +43,7 @@ export function CartView() {
   if (cart.length === 0) {
     return (
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-4 py-24 text-center">
-        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#eeebe4]">
+        <span className="flex h-20 w-20 items-center justify-center rounded-md bg-[#eeebe4]">
           <ShoppingBasket className="h-10 w-10 text-[#8f8f8f]" aria-hidden="true" />
         </span>
         <h1 className="text-2xl font-extrabold text-[#0b0b0b]">
@@ -51,7 +51,7 @@ export function CartView() {
         </h1>
         <Button
           size="lg"
-          className="mt-2 h-12 rounded-full bg-[#d4af37] px-8 font-extrabold hover:bg-[#bfa032]"
+          className="mt-2 h-12 rounded-md bg-[#d4af37] px-8 font-extrabold hover:bg-[#bfa032]"
           onClick={() => openCatalog("all")}
         >
           Découvrir le catalogue
@@ -75,7 +75,7 @@ export function CartView() {
           </div>
           <Button
             variant="ghost"
-            className="rounded-full font-bold text-[#8a6a14] hover:bg-[#f4eeda]"
+            className="rounded-md font-bold text-[#8a6a14] hover:bg-[#f4eeda]"
             onClick={() => openCatalog("all")}
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -93,11 +93,11 @@ export function CartView() {
             return (
               <li key={line.productId}>
                 <Reveal delay={i * 50}>
-                  <div className="flex gap-4 rounded-2xl border border-[#e6e3db] bg-white p-4 shadow-sm">
+                  <div className="flex gap-4 rounded-md border border-[#e6e3db] bg-white p-4 shadow-sm">
                     <SafeImg
                       src={imgFor(p.imageKeys[0])}
                       alt={p.name}
-                      className="h-24 w-24 shrink-0 cursor-pointer rounded-xl object-cover sm:h-28 sm:w-32"
+                      className="h-24 w-24 shrink-0 cursor-pointer rounded-md object-cover sm:h-28 sm:w-32"
                       sizesHint={p.name}
                     />
                     <div className="flex min-w-0 flex-1 flex-col">
@@ -118,7 +118,7 @@ export function CartView() {
                         <button
                           type="button"
                           aria-label={`Retirer ${p.name} du panier`}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#c6482f] hover:bg-[#f8e2dc]"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#c6482f] hover:bg-[#f8e2dc]"
                           onClick={() => {
                             removeFromCart(p.id);
                             toast({ title: "Produit retiré du panier", description: p.name });
@@ -133,7 +133,7 @@ export function CartView() {
                           <button
                             type="button"
                             aria-label="Diminuer la quantité"
-                            className="flex h-9 w-9 items-center justify-center rounded-full border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
+                            className="flex h-9 w-9 items-center justify-center rounded-md border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
                             onClick={() => setQty(p.id, line.qty - 1)}
                           >
                             <Minus className="h-4 w-4" aria-hidden="true" />
@@ -147,12 +147,12 @@ export function CartView() {
                               setQty(p.id, Math.max(1, Math.min(20, Number(e.target.value) || 1)))
                             }
                             aria-label={`Quantité de ${p.name}`}
-                            className="h-9 w-16 rounded-full border-[#d8d4ca] text-center font-bold [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                            className="h-9 w-16 rounded-md border-[#d8d4ca] text-center font-bold [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
                           />
                           <button
                             type="button"
                             aria-label="Augmenter la quantité"
-                            className="flex h-9 w-9 items-center justify-center rounded-full border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
+                            className="flex h-9 w-9 items-center justify-center rounded-md border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
                             onClick={() => setQty(p.id, line.qty + 1)}
                           >
                             <Plus className="h-4 w-4" aria-hidden="true" />
@@ -173,7 +173,7 @@ export function CartView() {
         {/* Récapitulatif */}
         <aside aria-label="Récapitulatif de la commande">
           <Reveal direction="right">
-            <div className="rounded-2xl border border-[#e6e3db] bg-white p-6 shadow-sm lg:sticky lg:top-40">
+            <div className="rounded-md border border-[#e6e3db] bg-white p-6 shadow-sm lg:sticky lg:top-40">
               <h2 className="text-lg font-extrabold text-[#0b0b0b]">
                 Récapitulatif
               </h2>
@@ -195,7 +195,7 @@ export function CartView() {
               </div>
 
               {!freeShipping && (
-                <div className="mt-4 rounded-xl bg-[#f4eeda] p-3 text-sm text-[#7a5f10]">
+                <div className="mt-4 rounded-md bg-[#f4eeda] p-3 text-sm text-[#7a5f10]">
                   <p className="flex items-start gap-2">
                     <Truck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                     Plus que{" "}
@@ -219,7 +219,7 @@ export function CartView() {
 
               <Button
                 size="lg"
-                className="mt-5 h-13 w-full rounded-full bg-[#d4af37] text-base font-extrabold hover:bg-[#bfa032]"
+                className="mt-5 h-13 w-full rounded-md bg-[#d4af37] text-base font-extrabold hover:bg-[#bfa032]"
                 onClick={openCheckout}
               >
                 Passer la commande

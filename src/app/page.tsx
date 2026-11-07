@@ -25,7 +25,7 @@ export default function Page() {
     <div className="flex min-h-screen flex-col bg-[#faf9f6]">
       <a
         href="#contenu-principal"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-[#141414] focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-[#141414] focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white"
       >
         Aller au contenu principal
       </a>

@@ -121,7 +121,7 @@ export function CatalogView() {
             role="tab"
             aria-selected={catalogCategory === "all"}
             onClick={() => openCatalog("all")}
-            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition-colors ${
+            className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-bold transition-colors ${
               catalogCategory === "all"
                 ? "bg-[#141414] text-white"
                 : "border border-[#d8d4ca] bg-white text-[#111111] hover:bg-[#eeebe4]"
@@ -137,7 +137,7 @@ export function CatalogView() {
               role="tab"
               aria-selected={catalogCategory === c.id}
               onClick={() => openCatalog(c.id)}
-              className={`rounded-full px-4 py-2 text-sm font-bold transition-colors ${
+              className={`rounded-md px-4 py-2 text-sm font-bold transition-colors ${
                 catalogCategory === c.id
                   ? "bg-[#141414] text-white"
                   : "border border-[#d8d4ca] bg-white text-[#111111] hover:bg-[#eeebe4]"
@@ -153,7 +153,7 @@ export function CatalogView() {
         {/* Barre latérale de filtres */}
         <aside aria-label="Filtres" className="lg:sticky lg:top-40 lg:self-start">
           <Reveal direction="left">
-            <div className="rounded-2xl border border-[#e6e3db] bg-white p-5 shadow-sm">
+            <div className="rounded-md border border-[#e6e3db] bg-white p-5 shadow-sm">
               <p className="flex items-center gap-2 text-base font-extrabold text-[#8a6a14]">
                 <SlidersHorizontal className="h-4.5 w-4.5" aria-hidden="true" />
                 Filtres
@@ -172,7 +172,7 @@ export function CatalogView() {
                   value={searchQuery}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Blender, marmite…"
-                  className="h-10 rounded-xl border-[#d8d4ca]"
+                  className="h-10 rounded-md border-[#d8d4ca]"
                 />
               </div>
 
@@ -182,7 +182,7 @@ export function CatalogView() {
                   <Label htmlFor="filter-price" className="text-sm font-bold">
                     Budget maximum
                   </Label>
-                  <span className="rounded-full bg-[#f4eeda] px-2 py-0.5 text-xs font-extrabold text-[#8a6a14]">
+                  <span className="rounded-md bg-[#f4eeda] px-2 py-0.5 text-xs font-extrabold text-[#8a6a14]">
                     {new Intl.NumberFormat("fr-FR").format(maxPrice)} FCFA
                   </span>
                 </div>
@@ -194,7 +194,7 @@ export function CatalogView() {
                   step={1000}
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(Number(e.target.value))}
-                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#e6e3db] accent-[#d4af37]"
+                  className="h-2 w-full cursor-pointer appearance-none rounded-md bg-[#e6e3db] accent-[#d4af37]"
                   aria-valuemin={0}
                   aria-valuemax={ABS_MAX}
                   aria-valuenow={maxPrice}
@@ -223,7 +223,7 @@ export function CatalogView() {
 
               <Button
                 variant="outline"
-                className="mt-5 w-full rounded-full border-[#d8d4ca] text-[#8a6a14] hover:bg-[#eeebe4]"
+                className="mt-5 w-full rounded-md border-[#d8d4ca] text-[#8a6a14] hover:bg-[#eeebe4]"
                 onClick={resetFilters}
               >
                 Réinitialiser
@@ -235,7 +235,7 @@ export function CatalogView() {
         {/* Résultats */}
         <div>
           <Reveal delay={80}>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e6e3db] bg-white px-4 py-3">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-[#e6e3db] bg-white px-4 py-3">
               <p className="text-sm text-muted-foreground" aria-live="polite">
                 <span className="font-extrabold text-[#111111]">
                   {results.length}
@@ -259,7 +259,7 @@ export function CatalogView() {
                 <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
                   <SelectTrigger
                     id="filter-sort"
-                    className="h-9 w-52 rounded-full border-[#d8d4ca]"
+                    className="h-9 w-52 rounded-md border-[#d8d4ca]"
                     aria-label="Trier les produits"
                   >
                     <SelectValue placeholder="Pertinence" />
@@ -280,7 +280,7 @@ export function CatalogView() {
           </Reveal>
 
           {results.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-[#d8d4ca] bg-white py-16 text-center">
+            <div className="flex flex-col items-center gap-3 rounded-md border border-dashed border-[#d8d4ca] bg-white py-16 text-center">
               <SearchX className="h-10 w-10 text-[#8f8f8f]" aria-hidden="true" />
               <p className="text-lg font-extrabold text-[#111111]">
                 Aucun produit ne correspond
@@ -290,7 +290,7 @@ export function CatalogView() {
               </p>
               <Button
                 variant="outline"
-                className="mt-1 rounded-full border-[#111111] text-[#8a6a14] hover:bg-[#f4eeda]"
+                className="mt-1 rounded-md border-[#111111] text-[#8a6a14] hover:bg-[#f4eeda]"
                 onClick={resetFilters}
               >
                 Tout afficher

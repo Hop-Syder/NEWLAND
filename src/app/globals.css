@@ -50,7 +50,7 @@
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 0.5rem;
   /* Palette NOIR & OR */
   --background: #faf9f6;         /* clair neutre chaud */
   --foreground: #111111;         /* noir profond */
@@ -179,6 +179,6 @@
 .nice-scroll::-webkit-scrollbar-track { background: transparent; }
 .nice-scroll::-webkit-scrollbar-thumb {
   background: #d8d4ca;
-  border-radius: 999px;
+  border-radius: 4px;
 }
 .nice-scroll::-webkit-scrollbar-thumb:hover { background: #bdb8ac; }

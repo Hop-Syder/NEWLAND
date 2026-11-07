@@ -75,7 +75,7 @@ function DockItem({
         reducedMotion ? undefined : { y: -7, scale: 1.16, transition: SPRING }
       }
       transition={SPRING}
-      className="relative flex w-14 flex-col items-center gap-0.5 rounded-2xl px-1 pb-1 pt-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37] sm:w-16"
+      className="relative flex w-14 flex-col items-center gap-0.5 rounded-md px-1 pb-1 pt-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37] sm:w-16"
     >
       <span className="relative">
         <motion.span
@@ -100,7 +100,7 @@ function DockItem({
               animate={{ scale: 1, y: 0 }}
               exit={reducedMotion ? undefined : { scale: 0, opacity: 0 }}
               transition={SPRING}
-              className="absolute -right-2.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#d4af37] px-1 text-[10px] font-extrabold text-[#0b0b0b] shadow-[0_2px_8px_rgba(212,175,55,0.55)]"
+              className="absolute -right-2.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-md bg-[#d4af37] px-1 text-[10px] font-extrabold text-[#0b0b0b] shadow-[0_2px_8px_rgba(212,175,55,0.55)]"
               aria-hidden="true"
             >
               {badge}
@@ -120,7 +120,7 @@ function DockItem({
       {active && (
         <motion.span
           layoutId="dock-active-dot"
-          className="absolute bottom-0 h-1 w-6 rounded-full bg-[#d4af37]"
+          className="absolute bottom-0 h-1 w-6 rounded-sm bg-[#d4af37]"
           transition={reducedMotion ? { duration: 0 } : SPRING}
           aria-hidden="true"
         />
@@ -193,7 +193,7 @@ export function MobileDock() {
       style={{ paddingBottom: "max(0.6rem, env(safe-area-inset-bottom))" }}
     >
       <div className="mx-auto w-fit max-w-[calc(100vw-1.5rem)]">
-        <div className="flex items-end gap-1 rounded-[1.75rem] border border-[#d4af37]/25 bg-[#0b0b0b]/92 px-2 pt-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+        <div className="flex items-end gap-1 rounded-md border border-[#d4af37]/25 bg-[#0b0b0b]/92 px-2 pt-1 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl">
           {items.map((item) => (
             <DockItem
               key={item.id}

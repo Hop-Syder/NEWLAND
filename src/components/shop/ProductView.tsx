@@ -50,7 +50,7 @@ export function ProductView() {
           Ce produit n&apos;existe pas (ou plus).
         </p>
         <Button
-          className="rounded-full bg-[#d4af37] hover:bg-[#bfa032]"
+          className="rounded-md bg-[#d4af37] hover:bg-[#bfa032]"
           onClick={() => openCatalog("all")}
         >
           Retour au catalogue
@@ -108,7 +108,7 @@ export function ProductView() {
         {/* Galerie */}
         <Reveal direction="left">
           <div>
-            <div className="relative overflow-hidden rounded-3xl border border-[#e6e3db] bg-white shadow-sm">
+            <div className="relative overflow-hidden rounded-md border border-[#e6e3db] bg-white shadow-sm">
               <SafeImg
                 src={mainImage}
                 alt={product.name}
@@ -131,7 +131,7 @@ export function ProductView() {
                     aria-label={`Photo ${i + 1} du produit`}
                     aria-pressed={i === imageIndex}
                     onClick={() => setImageIndex(i)}
-                    className={`overflow-hidden rounded-xl border-2 transition-colors ${
+                    className={`overflow-hidden rounded-md border-2 transition-colors ${
                       i === imageIndex
                         ? "border-[#d4af37]"
                         : "border-transparent hover:border-[#d8d4ca]"
@@ -171,7 +171,7 @@ export function ProductView() {
                 {formatFCFA(product.price)}
               </span>
               {product.oldPrice && (
-                <span className="rounded-full bg-[#d4af37] px-2.5 py-1 text-xs font-extrabold text-[#0b0b0b]">
+                <span className="rounded-md bg-[#d4af37] px-2.5 py-1 text-xs font-extrabold text-[#0b0b0b]">
                   Économisez {formatFCFA(product.oldPrice - product.price)}
                 </span>
               )}
@@ -182,7 +182,7 @@ export function ProductView() {
             </p>
 
             {/* Caractéristiques */}
-            <section aria-labelledby="caract-title" className="rounded-2xl border border-[#e6e3db] bg-white p-5">
+            <section aria-labelledby="caract-title" className="rounded-md border border-[#e6e3db] bg-white p-5">
               <h2
                 id="caract-title"
                 className="flex items-center gap-2 text-base font-extrabold text-[#8a6a14]"
@@ -195,7 +195,7 @@ export function ProductView() {
                   <li key={f} className="flex items-start gap-2 text-sm text-[#3d3d3d]">
                     <span
                       aria-hidden="true"
-                      className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#d4af37]"
+                      className="mt-1.5 h-2 w-2 shrink-0 rounded-md bg-[#d4af37]"
                     />
                     {f}
                   </li>
@@ -204,12 +204,12 @@ export function ProductView() {
             </section>
 
             {/* Quantité + ajout panier */}
-            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#e6e3db] bg-white p-4">
+            <div className="flex flex-wrap items-center gap-3 rounded-md border border-[#e6e3db] bg-white p-4">
               <div className="flex items-center gap-2" role="group" aria-label="Quantité">
                 <button
                   type="button"
                   aria-label="Diminuer la quantité"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
+                  className="flex h-10 w-10 items-center justify-center rounded-md border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
                 >
                   <Minus className="h-4 w-4" aria-hidden="true" />
@@ -223,7 +223,7 @@ export function ProductView() {
                 <button
                   type="button"
                   aria-label="Augmenter la quantité"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
+                  className="flex h-10 w-10 items-center justify-center rounded-md border border-[#d8d4ca] bg-white hover:bg-[#eeebe4]"
                   onClick={() => setQty((q) => Math.min(20, q + 1))}
                 >
                   <Plus className="h-4 w-4" aria-hidden="true" />
@@ -232,7 +232,7 @@ export function ProductView() {
 
               <Button
                 size="lg"
-                className="h-12 min-w-40 flex-1 rounded-full bg-[#d4af37] text-base font-extrabold hover:bg-[#bfa032]"
+                className="h-12 min-w-40 flex-1 rounded-md bg-[#d4af37] text-base font-extrabold hover:bg-[#bfa032]"
                 onClick={() => addNow(false)}
               >
                 <ShoppingBasket className="h-5 w-5" aria-hidden="true" />
@@ -241,7 +241,7 @@ export function ProductView() {
               <Button
                 size="lg"
                 variant="outline"
-                className="h-12 rounded-full border-[#111111] text-base font-bold text-[#8a6a14] hover:bg-[#f4eeda]"
+                className="h-12 rounded-md border-[#111111] text-base font-bold text-[#8a6a14] hover:bg-[#f4eeda]"
                 onClick={() => addNow(true)}
               >
                 Commander
@@ -249,7 +249,7 @@ export function ProductView() {
             </div>
 
             {/* Informations pratiques */}
-            <section aria-labelledby="pratique-title" className="rounded-2xl bg-[#f1efe9]/70 p-5">
+            <section aria-labelledby="pratique-title" className="rounded-md bg-[#f1efe9]/70 p-5">
               <h2 id="pratique-title" className="text-base font-extrabold text-[#0b0b0b]">
                 Infos pratiques
               </h2>

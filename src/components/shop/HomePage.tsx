@@ -42,17 +42,17 @@ export function HomePage() {
         {/* halos décoratifs doux */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[#d4af37]/10 blur-3xl"
+          className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-md bg-[#d4af37]/10 blur-3xl"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -bottom-32 right-1/3 h-80 w-80 rounded-full bg-[#d4af37]/15 blur-3xl"
+          className="pointer-events-none absolute -bottom-32 right-1/3 h-80 w-80 rounded-md bg-[#d4af37]/15 blur-3xl"
         />
 
         <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 pb-12 pt-10 sm:pt-14 lg:grid-cols-2 lg:gap-12 lg:pb-20">
           <div className="flex flex-col items-start gap-5">
             <Reveal>
-              <span className="inline-flex items-center gap-2 rounded-full border border-[#d4af37]/40 bg-[#f4eeda] px-4 py-1.5 text-sm font-bold text-[#8a6a14]">
+              <span className="inline-flex items-center gap-2 rounded-md border border-[#d4af37]/40 bg-[#f4eeda] px-4 py-1.5 text-sm font-bold text-[#8a6a14]">
                 <Sparkles className="h-4 w-4" aria-hidden="true" />
                 Maison · Cuisine · Bureau
               </span>
@@ -94,7 +94,7 @@ export function HomePage() {
               <div className="flex flex-wrap items-center gap-3">
                 <Button
                   size="lg"
-                  className="h-12 rounded-full bg-[#d4af37] px-7 text-base font-extrabold shadow-lg shadow-[#d4af37]/25 hover:bg-[#bfa032]"
+                  className="h-12 rounded-md bg-[#d4af37] px-7 text-base font-extrabold shadow-lg shadow-[#d4af37]/25 hover:bg-[#bfa032]"
                   onClick={() => openCatalog("all")}
                 >
                   Découvrir
@@ -103,7 +103,7 @@ export function HomePage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="h-12 rounded-full border-[#111111] px-7 text-base font-bold text-[#8a6a14] hover:bg-[#f4eeda]"
+                  className="h-12 rounded-md border-[#111111] px-7 text-base font-bold text-[#8a6a14] hover:bg-[#f4eeda]"
                   onClick={() => openCatalog("appareils")}
                 >
                   Appareils ménagers
@@ -130,11 +130,11 @@ export function HomePage() {
             <div className="relative">
               <div
                 aria-hidden="true"
-                className="absolute -inset-3 rounded-[2rem] bg-gradient-to-br from-[#d4af37]/25 via-transparent to-[#0b0b0b]/15"
+                className="absolute -inset-3 rounded-md bg-gradient-to-br from-[#d4af37]/25 via-transparent to-[#0b0b0b]/15"
               />
               <div
                 ref={parallaxRef}
-                className="parallax-layer relative overflow-hidden rounded-[1.75rem] shadow-2xl shadow-[#0b0b0b]/25"
+                className="parallax-layer relative overflow-hidden rounded-md shadow-2xl shadow-[#0b0b0b]/25"
               >
                 <SafeImg
                   src={imgFor("hero")}
@@ -144,8 +144,8 @@ export function HomePage() {
               </div>
 
               {/* carte flottante rassurante */}
-              <div className="absolute -bottom-6 right-4 hidden rounded-2xl border border-[#e6e3db] bg-white/95 px-4 py-3 shadow-xl backdrop-blur sm:flex sm:items-center sm:gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f4eeda]">
+              <div className="absolute -bottom-6 right-4 hidden rounded-md border border-[#e6e3db] bg-white/95 px-4 py-3 shadow-xl backdrop-blur sm:flex sm:items-center sm:gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#f4eeda]">
                   <ShieldCheck className="h-5 w-5 text-[#8a6a14]" aria-hidden="true" />
                 </span>
                 <div className="leading-tight">
@@ -171,7 +171,7 @@ export function HomePage() {
           {REASSURANCE.map((item, i) => (
             <Reveal key={item.title} delay={i * 80}>
               <div className="flex items-start gap-3.5">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#f4eeda]">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#f4eeda]">
                   <item.icon className="h-5.5 w-5.5 text-[#8a6a14]" aria-hidden="true" />
                 </span>
                 <div>
@@ -289,14 +289,14 @@ export function HomePage() {
       {/* --------------------------- BANDEAU CTA ---------------------------- */}
       <section className="mx-auto w-full max-w-7xl px-4 pb-14">
         <Reveal>
-          <div className="relative overflow-hidden rounded-3xl bg-[#0b0b0b] px-6 py-10 text-center sm:px-12 sm:py-14">
+          <div className="relative overflow-hidden rounded-md bg-[#0b0b0b] px-6 py-10 text-center sm:px-12 sm:py-14">
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[#d4af37]/20 blur-2xl"
+              className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-md bg-[#d4af37]/20 blur-2xl"
             />
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-[#d4af37]/10 blur-2xl"
+              className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-md bg-[#d4af37]/10 blur-2xl"
             />
             <h2 className="mx-auto max-w-2xl text-2xl font-extrabold text-[#faf9f6] sm:text-3xl">
               Une question ? On vous répond.
@@ -308,7 +308,7 @@ export function HomePage() {
             </p>
             <Button
               size="lg"
-              className="mt-6 h-12 rounded-full bg-[#d4af37] px-8 text-base font-extrabold hover:bg-[#bfa032]"
+              className="mt-6 h-12 rounded-md bg-[#d4af37] px-8 text-base font-extrabold hover:bg-[#bfa032]"
               onClick={() => openCatalog("all")}
             >
               Voir les produits

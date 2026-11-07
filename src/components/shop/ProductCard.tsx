@@ -29,7 +29,7 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <article
-      className="hover-lift group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm focus-within:ring-2 focus-within:ring-[#d4af37]"
+      className="hover-lift group flex h-full cursor-pointer flex-col overflow-hidden rounded-md border border-border bg-card text-left shadow-sm focus-within:ring-2 focus-within:ring-[#d4af37]"
       tabIndex={0}
       role="button"
       aria-label={`Voir la fiche produit : ${product.name}`}
@@ -54,7 +54,7 @@ export function ProductCard({ product }: { product: Product }) {
           />
         </div>
         {product.oldPrice && (
-          <span className="absolute right-3 top-3 rounded-full bg-[#d4af37] px-2.5 py-1 text-xs font-extrabold text-[#0b0b0b] shadow">
+          <span className="absolute right-3 top-3 rounded-md bg-[#d4af37] px-2.5 py-1 text-xs font-extrabold text-[#0b0b0b] shadow">
             Promo
           </span>
         )}
@@ -82,7 +82,7 @@ export function ProductCard({ product }: { product: Product }) {
           <button
             type="button"
             aria-label={`Ajouter ${product.name} au panier`}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#141414] text-white transition-colors hover:bg-[#2e2e2e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37] active:scale-95 motion-reduce:transition-none"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#141414] text-white transition-colors hover:bg-[#2e2e2e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37] active:scale-95 motion-reduce:transition-none"
             onClick={quickAdd}
           >
             <ShoppingBasket className="h-5 w-5" aria-hidden="true" />
@@ -111,7 +111,7 @@ export function CategoryCard({
       type="button"
       onClick={onClick}
       aria-label={`Explorer la catégorie ${cat.name}`}
-      className="hover-lift group relative block h-52 w-full overflow-hidden rounded-2xl text-left shadow-sm sm:h-60"
+      className="hover-lift group relative block h-52 w-full overflow-hidden rounded-md text-left shadow-sm sm:h-60"
     >
       <SafeImg
         src={imgFor(cat.imageKey)}
@@ -124,7 +124,7 @@ export function CategoryCard({
           {cat.name}
         </h3>
         <p className="mt-1 line-clamp-2 text-sm text-white/85">{cat.tagline}</p>
-        <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#d4af37] px-3 py-1 text-xs font-extrabold text-[#0b0b0b]">
+        <span className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-[#d4af37] px-3 py-1 text-xs font-extrabold text-[#0b0b0b]">
           {count} article{count > 1 ? "s" : ""}
           <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
         </span>

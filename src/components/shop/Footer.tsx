@@ -51,10 +51,10 @@ export function Footer() {
           <button
             type="button"
             onClick={goHome}
-            className="flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37]"
+            className="flex items-center gap-2.5 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37]"
             aria-label="Maison Cauris — retour en haut"
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#141414] text-white ring-1 ring-white/20">
+            <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#141414] text-white ring-1 ring-white/20">
               <Shell className="h-5.5 w-5.5" aria-hidden="true" />
             </span>
             <span className="flex flex-col leading-none">
@@ -175,7 +175,7 @@ export function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Maison Cauris sur Facebook (lien à personnaliser)"
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-[#d4af37]"
+              className="flex h-11 w-11 items-center justify-center rounded-md bg-white/10 transition-colors hover:bg-[#d4af37]"
             >
               <Facebook className="h-5 w-5" aria-hidden="true" />
             </a>
@@ -184,7 +184,7 @@ export function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Maison Cauris sur Instagram (lien à personnaliser)"
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-[#d4af37]"
+              className="flex h-11 w-11 items-center justify-center rounded-md bg-white/10 transition-colors hover:bg-[#d4af37]"
             >
               <Instagram className="h-5 w-5" aria-hidden="true" />
             </a>
@@ -193,7 +193,7 @@ export function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Contacter Maison Cauris sur WhatsApp"
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-[#d4af37]"
+              className="flex h-11 w-11 items-center justify-center rounded-md bg-white/10 transition-colors hover:bg-[#d4af37]"
             >
               <MessageCircle className="h-5 w-5" aria-hidden="true" />
             </a>
@@ -202,18 +202,18 @@ export function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Maison Cauris sur YouTube (lien à personnaliser)"
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-[#d4af37]"
+              className="flex h-11 w-11 items-center justify-center rounded-md bg-white/10 transition-colors hover:bg-[#d4af37]"
             >
               <Youtube className="h-5 w-5" aria-hidden="true" />
             </a>
           </div>
 
-          <div className="mt-6 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+          <div className="mt-6 rounded-md bg-white/5 p-4 ring-1 ring-white/10">
             <p className="text-sm font-bold text-white">
               Une question ?
             </p>
             <Button
-              className="mt-3 h-10 w-full rounded-full bg-[#d4af37] font-extrabold hover:bg-[#bfa032]"
+              className="mt-3 h-10 w-full rounded-md bg-[#d4af37] font-extrabold hover:bg-[#bfa032]"
               asChild
             >
               <a
