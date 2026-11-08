@@ -3,8 +3,22 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { getProduct } from "@/lib/products";
+import {
+  pointsForAmount,
+  rewardDiscount,
+  type Reward,
+} from "@/lib/loyalty";
 
-export type View = "home" | "catalog" | "product" | "cart" | "checkout" | "success";
+export type View =
+  | "home"
+  | "catalog"
+  | "product"
+  | "cart"
+  | "checkout"
+  | "success"
+  | "account";
+
+export type AccountTab = "overview" | "orders" | "loyalty" | "settings";
 
 export interface CartLine {
   productId: string;
@@ -15,17 +29,60 @@ export interface Customer {
   name: string;
   phone: string;
   email?: string;
+  /** Préférences enregistrées dans l'espace client (Paramètres). */
+  city?: string;
+  district?: string;
+  address?: string;
+  defaultPayment?: PaymentMethod;
+  /** Alertes commande par WhatsApp (par défaut : oui). */
+  notifyWhatsApp?: boolean;
 }
 
-export interface OrderInfo {
+/** Ligne figée d'une commande passée (le prix au moment de l'achat). */
+export interface OrderLine {
+  productId: string;
+  name: string;
+  price: number;
+  qty: number;
+}
+
+export interface Order {
   id: string;
-  total: number;
-  paymentLabel: string;
-  deliveryZone: string;
   createdAt: string;
+  lines: OrderLine[];
+  subtotal: number;
+  /** Réduction fidélité appliquée (0 si aucune). */
+  discount: number;
+  shipping: number;
+  total: number;
+  paymentId: PaymentMethod;
+  paymentLabel: string;
+  city: string;
+  district: string;
+  address: string;
+  zoneLabel: string;
+  eta: string;
+  /** Points gagnés sur cette commande. */
+  pointsEarned: number;
+  /** Récompense fidélité consommée, le cas échéant. */
+  rewardUsed: { label: string; cost: number } | null;
   name: string;
   phone: string;
+}
+
+/** Données saisies au checkout, transmises à placeOrder. */
+export interface PlaceOrderInput {
+  name: string;
+  phone: string;
+  email?: string;
   city: string;
+  district: string;
+  address: string;
+  paymentId: PaymentMethod;
+  paymentLabel: string;
+  zoneLabel: string;
+  eta: string;
+  shipping: number;
 }
 
 export type PaymentMethod =
@@ -97,22 +154,37 @@ export const DELIVERY_ZONES: DeliveryZone[] = [
 
 export const FREE_SHIPPING_THRESHOLD = 100000;
 
+/** Durée de la garantie boutique sur chaque commande. */
+export const WARRANTY_DAYS = 90;
+
 interface ShopState {
   view: View;
   productId: string | null;
   catalogCategory: string; // "all" | CategoryId
   searchQuery: string;
   cart: CartLine[];
+
+  /** Compte client — créé automatiquement à la première commande. */
   customer: Customer | null;
-  lastOrder: OrderInfo | null;
-  /** Dialogue « Espace client » ouvert (partagé header + dock mobile). */
-  accountOpen: boolean;
+  /** Historique complet des commandes du client. */
+  orders: Order[];
+  /** Dernière commande passée (écran de confirmation). */
+  lastOrder: Order | null;
+
+  /** Carte de fidélité. */
+  loyaltyPoints: number;
+  lifetimePoints: number;
+  /** Récompense armée, appliquée à la prochaine commande. */
+  activeReward: Reward | null;
+
+  accountTab: AccountTab;
 
   goHome: () => void;
   openCatalog: (category?: string) => void;
   openProduct: (id: string) => void;
   openCart: () => void;
   openCheckout: () => void;
+  openAccount: (tab?: AccountTab) => void;
   setSearch: (q: string) => void;
 
   addToCart: (productId: string, qty?: number) => void;
@@ -120,9 +192,12 @@ interface ShopState {
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
 
-  setCustomer: (c: Customer) => void;
-  setAccountOpen: (open: boolean) => void;
-  placeOrder: (order: OrderInfo) => void;
+  /** Crée ou met à jour le compte client (espace client → Paramètres). */
+  saveCustomer: (c: Customer) => void;
+  setAccountTab: (tab: AccountTab) => void;
+  /** Arme / retire la récompense fidélité pour la prochaine commande. */
+  setActiveReward: (reward: Reward | null) => void;
+  placeOrder: (input: PlaceOrderInput) => void;
   resetToHome: () => void;
 }
 
@@ -135,8 +210,12 @@ export const useShop = create<ShopState>()(
       searchQuery: "",
       cart: [],
       customer: null,
+      orders: [],
       lastOrder: null,
-      accountOpen: false,
+      loyaltyPoints: 0,
+      lifetimePoints: 0,
+      activeReward: null,
+      accountTab: "overview",
 
       goHome: () =>
         set({ view: "home", productId: null, searchQuery: "" }),
@@ -153,6 +232,12 @@ export const useShop = create<ShopState>()(
       openCart: () => set({ view: "cart" }),
 
       openCheckout: () => set({ view: "checkout" }),
+
+      openAccount: (tab) =>
+        set((s) => ({
+          view: "account",
+          accountTab: tab ?? s.accountTab ?? "overview",
+        })),
 
       setSearch: (q) => set({ searchQuery: q }),
 
@@ -184,12 +269,82 @@ export const useShop = create<ShopState>()(
 
       clearCart: () => set({ cart: [] }),
 
-      setCustomer: (c) => set({ customer: c }),
+      saveCustomer: (c) => set({ customer: c }),
 
-      setAccountOpen: (open) => set({ accountOpen: open }),
+      setAccountTab: (tab) => set({ accountTab: tab }),
 
-      placeOrder: (order) =>
-        set({ lastOrder: order, view: "success", cart: [] }),
+      setActiveReward: (reward) => set({ activeReward: reward }),
+
+      placeOrder: (input) =>
+        set((s) => {
+          // 1. Photo figée du panier au moment de la commande.
+          const lines: OrderLine[] = s.cart.flatMap((l) => {
+            const p = getProduct(l.productId);
+            return p
+              ? [{ productId: p.id, name: p.name, price: p.price, qty: l.qty }]
+              : [];
+          });
+          const subtotal = lines.reduce(
+            (sum, l) => sum + l.price * l.qty,
+            0
+          );
+
+          // 2. Réduction fidélité éventuelle + total.
+          const reward = s.activeReward;
+          const discount = reward ? rewardDiscount(reward, subtotal) : 0;
+          const total = Math.max(0, subtotal - discount) + input.shipping;
+
+          // 3. Points gagnés sur le montant payé, récompense consommée.
+          const pointsEarned = pointsForAmount(total);
+
+          // 4. Le compte se crée automatiquement au premier achat,
+          //    et les coordonnées restent toujours à jour.
+          const customer: Customer = {
+            name: input.name,
+            phone: input.phone,
+            email: input.email || s.customer?.email,
+            city: input.city,
+            district: input.district,
+            address: input.address,
+            defaultPayment: input.paymentId,
+            notifyWhatsApp: s.customer?.notifyWhatsApp ?? true,
+          };
+
+          const order: Order = {
+            id: makeOrderId(),
+            createdAt: new Date().toISOString(),
+            lines,
+            subtotal,
+            discount,
+            shipping: input.shipping,
+            total,
+            paymentId: input.paymentId,
+            paymentLabel: input.paymentLabel,
+            city: input.city,
+            district: input.district,
+            address: input.address,
+            zoneLabel: input.zoneLabel,
+            eta: input.eta,
+            pointsEarned,
+            rewardUsed: reward
+              ? { label: reward.label, cost: reward.cost }
+              : null,
+            name: input.name,
+            phone: input.phone,
+          };
+
+          return {
+            orders: [order, ...s.orders],
+            lastOrder: order,
+            customer,
+            loyaltyPoints:
+              s.loyaltyPoints + pointsEarned - (reward?.cost ?? 0),
+            lifetimePoints: s.lifetimePoints + pointsEarned,
+            activeReward: null,
+            cart: [],
+            view: "success",
+          };
+        }),
 
       resetToHome: () =>
         set({ view: "home", productId: null, lastOrder: null }),
@@ -200,11 +355,21 @@ export const useShop = create<ShopState>()(
       partialize: (s) => ({
         cart: s.cart,
         customer: s.customer,
+        orders: s.orders,
         lastOrder: s.lastOrder,
+        loyaltyPoints: s.loyaltyPoints,
+        lifetimePoints: s.lifetimePoints,
+        activeReward: s.activeReward,
       }),
     }
   )
 );
+
+/** Numéro de commande lisible — ex. MC-48213. */
+function makeOrderId(): string {
+  const n = Math.floor(10000 + Math.random() * 89999);
+  return `MC-${n}`;
+}
 
 /** Total du panier en FCFA (hors frais de livraison). */
 export function cartSubtotal(cart: CartLine[]): number {
@@ -217,4 +382,48 @@ export function cartSubtotal(cart: CartLine[]): number {
 /** Nombre d'articles dans le panier. */
 export function cartCount(cart: CartLine[]): number {
   return cart.reduce((sum, l) => sum + l.qty, 0);
+}
+
+export interface OrderStageInfo {
+  stage: 1 | 2 | 3;
+  label: string;
+  hint: string;
+}
+
+/** Étape de suivi déduite de l'ancienneté de la commande (simulation). */
+export function orderStage(order: Order, now = Date.now()): OrderStageInfo {
+  const ageH = (now - new Date(order.createdAt).getTime()) / 3_600_000;
+  if (ageH < 24)
+    return {
+      stage: 1,
+      label: "En préparation",
+      hint: "Vérification et emballage de vos articles.",
+    };
+  if (ageH < 72)
+    return {
+      stage: 2,
+      label: "En livraison",
+      hint: `En route (${order.eta}).`,
+    };
+  return {
+    stage: 3,
+    label: "Livrée",
+    hint: "Colis réceptionné — merci !",
+  };
+}
+
+/** Fin de la garantie boutique (90 jours après la commande). */
+export function warrantyEnd(order: Order): Date {
+  return new Date(
+    new Date(order.createdAt).getTime() + WARRANTY_DAYS * 86_400_000
+  );
+}
+
+export function warrantyActive(order: Order, now = Date.now()): boolean {
+  return warrantyEnd(order).getTime() > now;
+}
+
+/** Montant déjà dépensé au total (hors réductions fidélité). */
+export function lifetimeSpent(orders: Order[]): number {
+  return orders.reduce((sum, o) => sum + o.subtotal, 0);
 }

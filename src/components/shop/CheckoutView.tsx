@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
+  Gift,
   ShieldCheck,
+  Sparkles,
   Wallet,
   UserRound,
   MapPin,
@@ -26,7 +28,8 @@ import {
 } from "@/components/ui/select";
 import { getProduct } from "@/lib/products";
 import { imgFor } from "@/lib/images";
-import { formatFCFA, makeOrderId } from "@/lib/format";
+import { formatFCFA } from "@/lib/format";
+import { pointsForAmount, rewardDiscount } from "@/lib/loyalty";
 import {
   useShop,
   cartSubtotal,
@@ -70,7 +73,8 @@ interface FormState {
 export function CheckoutView() {
   const cart = useShop((s) => s.cart);
   const customer = useShop((s) => s.customer);
-  const setCustomer = useShop((s) => s.setCustomer);
+  const activeReward = useShop((s) => s.activeReward);
+  const setActiveReward = useShop((s) => s.setActiveReward);
   const placeOrder = useShop((s) => s.placeOrder);
   const openCart = useShop((s) => s.openCart);
   const openCatalog = useShop((s) => s.openCatalog);
@@ -79,11 +83,11 @@ export function CheckoutView() {
     name: customer?.name ?? "",
     phone: customer?.phone ?? "",
     email: customer?.email ?? "",
-    city: "Cotonou",
-    district: "",
-    address: "",
+    city: customer?.city ?? "Cotonou",
+    district: customer?.district ?? "",
+    address: customer?.address ?? "",
     landmark: "",
-    payment: "mtn_momo",
+    payment: customer?.defaultPayment ?? "mtn_momo",
     momoNumber: "",
     notes: "",
   });
@@ -100,7 +104,10 @@ export function CheckoutView() {
 
   const freeShipping = subtotal >= 100000;
   const shipping = freeShipping ? 0 : zone.fee;
-  const total = subtotal + shipping;
+  // Récompense fidélité armée dans l'espace client → réduite ici.
+  const discount = activeReward ? rewardDiscount(activeReward, subtotal) : 0;
+  const total = Math.max(0, subtotal - discount) + shipping;
+  const pointsPreview = pointsForAmount(total);
 
   if (cart.length === 0) {
     return (
@@ -148,27 +155,27 @@ export function CheckoutView() {
     }
 
     setSubmitting(true);
-    setCustomer({
-      name: form.name.trim(),
-      phone: form.phone.trim(),
-      email: form.email.trim() || undefined,
-    });
 
     const paymentLabel =
       PAYMENT_METHODS.find((m) => m.id === form.payment)?.label ?? "Paiement";
 
     // Simulation de la confirmation : dans une vraie boutique, on appellerait
     // ici l'API de l'agrégateur (ex. CinetPay) ou le marchand Mobile Money.
+    // placeOrder crée le compte au premier achat, met à jour les coordonnées,
+    // enregistre l'historique et gère les points de fidélité.
     window.setTimeout(() => {
       placeOrder({
-        id: makeOrderId(),
-        total,
-        paymentLabel,
-        deliveryZone: `${form.city} — ${zone.eta}`,
-        createdAt: new Date().toISOString(),
         name: form.name.trim(),
         phone: form.phone.trim(),
+        email: form.email.trim() || undefined,
         city: form.city,
+        district: form.district.trim(),
+        address: form.address.trim(),
+        paymentId: form.payment,
+        paymentLabel,
+        zoneLabel: zone.label,
+        eta: zone.eta,
+        shipping,
       });
       setSubmitting(false);
       window.scrollTo({ top: 0 });
@@ -471,6 +478,29 @@ export function CheckoutView() {
                 <span className="text-muted-foreground">Sous-total</span>
                 <span className="font-bold">{formatFCFA(subtotal)}</span>
               </div>
+
+              {/* Récompense fidélité appliquée */}
+              {activeReward && discount > 0 && (
+                <div className="mt-2 flex items-center justify-between gap-2 rounded-sm bg-[#f4eeda] px-3 py-2 text-sm">
+                  <span className="flex min-w-0 items-center gap-1.5 font-bold text-[#8a6a14]">
+                    <Gift className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span className="truncate">{activeReward.label}</span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <span className="font-extrabold text-[#8a6a14]">
+                      −{formatFCFA(discount)}
+                    </span>
+                    <button
+                      type="button"
+                      className="text-xs font-bold text-[#8f8f8f] underline hover:text-[#111111]"
+                      onClick={() => setActiveReward(null)}
+                    >
+                      Retirer
+                    </button>
+                  </span>
+                </div>
+              )}
+
               <div className="mt-2 flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
                   Livraison ({form.city})
@@ -488,6 +518,17 @@ export function CheckoutView() {
                   {formatFCFA(total)}
                 </span>
               </div>
+
+              {/* Points fidélité gagnés avec cette commande */}
+              <p className="mt-2 flex items-center justify-end gap-1.5 text-xs font-bold text-[#8a6a14]">
+                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                +{pointsPreview} pts de fidélité avec cet achat
+              </p>
+              {!activeReward && (
+                <p className="mt-1 text-right text-xs text-muted-foreground">
+                  10 000 F = 5 pts · 100 pts = −5 % · 80 pts = −7 000 F
+                </p>
+              )}
 
               <Button
                 type="submit"

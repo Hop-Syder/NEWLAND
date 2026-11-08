@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Copy, Package, Truck, Phone } from "lucide-react";
+import { CheckCircle2, Copy, Gem, Package, Truck, Phone } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -10,8 +10,10 @@ import { Reveal } from "./Reveal";
 
 export function OrderSuccessView() {
   const lastOrder = useShop((s) => s.lastOrder);
+  const loyaltyPoints = useShop((s) => s.loyaltyPoints);
   const resetToHome = useShop((s) => s.resetToHome);
   const openCatalog = useShop((s) => s.openCatalog);
+  const openAccount = useShop((s) => s.openAccount);
 
   if (!lastOrder) {
     return (
@@ -98,10 +100,32 @@ export function OrderSuccessView() {
               </div>
               <div className="flex items-center justify-between gap-4">
                 <dt className="text-muted-foreground">Livraison</dt>
-                <dd className="text-right font-bold">{lastOrder.deliveryZone}</dd>
+                <dd className="text-right font-bold">
+                  {lastOrder.city} · {lastOrder.eta}
+                </dd>
               </div>
             </dl>
           </div>
+
+          {/* Carte fidélité : points gagnés */}
+          <button
+            type="button"
+            onClick={() => openAccount("loyalty")}
+            className="mt-4 flex w-full items-center justify-between gap-3 rounded-md bg-[#141414] p-5 text-left text-white transition-colors hover:bg-[#1f1f1f]"
+          >
+            <span className="flex items-center gap-3">
+              <Gem className="h-6 w-6 shrink-0 text-[#d4af37]" aria-hidden="true" />
+              <span>
+                <span className="block text-sm font-bold text-[#d4af37]">
+                  +{lastOrder.pointsEarned} points gagnés
+                </span>
+                <span className="block text-xs text-white/70">
+                  Solde : {loyaltyPoints} pts · 100 pts = −5 % · 80 pts = −7 000 F
+                </span>
+              </span>
+            </span>
+            <span className="text-sm font-extrabold text-[#d4af37]">Voir ma carte →</span>
+          </button>
 
           <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
             <div className="rounded-md border border-[#e6e3db] p-4">
@@ -139,6 +163,14 @@ export function OrderSuccessView() {
               size="lg"
               variant="outline"
               className="h-12 rounded-md border-[#d4af37] px-7 font-bold text-[#8a6a14] hover:bg-[#f4eeda]"
+              onClick={() => openAccount("orders")}
+            >
+              Suivre ma commande
+            </Button>
+            <Button
+              size="lg"
+              variant="ghost"
+              className="h-12 rounded-md px-5 font-bold text-[#3d3d3d] hover:bg-[#f1efe9]"
               onClick={() => openCatalog("all")}
             >
               Continuer mes achats

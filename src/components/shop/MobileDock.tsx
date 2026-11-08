@@ -136,7 +136,7 @@ export function MobileDock() {
   const goHome = useShop((s) => s.goHome);
   const openCatalog = useShop((s) => s.openCatalog);
   const openCart = useShop((s) => s.openCart);
-  const setAccountOpen = useShop((s) => s.setAccountOpen);
+  const openAccount = useShop((s) => s.openAccount);
   const count = cartCount(cart);
 
   const items: Omit<DockItemProps, "reducedMotion">[] = [
@@ -173,8 +173,8 @@ export function MobileDock() {
       id: "account",
       label: "Compte",
       icon: UserRound,
-      active: false,
-      onActivate: () => setAccountOpen(true),
+      active: view === "account",
+      onActivate: () => openAccount(),
     },
     {
       id: "cart",

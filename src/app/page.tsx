@@ -11,6 +11,7 @@ import { ProductView } from "@/components/shop/ProductView";
 import { CartView } from "@/components/shop/CartView";
 import { CheckoutView } from "@/components/shop/CheckoutView";
 import { OrderSuccessView } from "@/components/shop/OrderSuccessView";
+import { AccountView } from "@/components/shop/AccountView";
 
 export default function Page() {
   const view = useShop((s) => s.view);
@@ -39,6 +40,7 @@ export default function Page() {
         {view === "cart" && <CartView />}
         {view === "checkout" && <CheckoutView />}
         {view === "success" && <OrderSuccessView />}
+        {view === "account" && <AccountView />}
       </main>
 
       <Footer />

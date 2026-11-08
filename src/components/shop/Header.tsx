@@ -10,7 +10,6 @@ import {
   Minus,
   Plus,
   ArrowRight,
-  X,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -23,16 +22,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CATEGORIES, PRODUCTS, getProduct } from "@/lib/products";
@@ -42,7 +31,6 @@ import {
   useShop,
   cartCount,
   cartSubtotal,
-  type Customer,
 } from "@/lib/store";
 import { SafeImg } from "./SafeImg";
 
@@ -71,32 +59,17 @@ export function Header() {
   const goHome = useShop((s) => s.goHome);
   const openCatalog = useShop((s) => s.openCatalog);
   const openProduct = useShop((s) => s.openProduct);
+  const openAccount = useShop((s) => s.openAccount);
   const searchQuery = useShop((s) => s.searchQuery);
   const setSearch = useShop((s) => s.setSearch);
   const cart = useShop((s) => s.cart);
   const setQty = useShop((s) => s.setQty);
   const removeFromCart = useShop((s) => s.removeFromCart);
   const customer = useShop((s) => s.customer);
-  const setCustomer = useShop((s) => s.setCustomer);
   const catalogCategory = useShop((s) => s.catalogCategory);
   const openCart = useShop((s) => s.openCart);
-  // État partagé avec le dock mobile (qui ouvre aussi ce dialogue).
-  const accountOpen = useShop((s) => s.accountOpen);
-  const setAccountOpen = useShop((s) => s.setAccountOpen);
 
   const [cartOpen, setCartOpen] = useState(false);
-  const [form, setForm] = useState<Customer>({
-    name: "",
-    phone: "",
-    email: "",
-  });
-  // Préremplissage à l'ouverture du dialogue — ajustement d'état pendant le
-  // rendu (pattern React), déclenché par l'ouverture partagée header/dock.
-  const [prefilledFor, setPrefilledFor] = useState<string | null>(null);
-  if (accountOpen && customer && prefilledFor !== customer.phone) {
-    setPrefilledFor(customer.phone);
-    setForm({ ...customer });
-  }
   const count = cartCount(cart);
   const subtotal = cartSubtotal(cart);
 
@@ -104,24 +77,6 @@ export function Header() {
     e.preventDefault();
     openCatalog("all");
     // On garde la requête telle quelle ; le catalogue filtre dessus.
-  };
-
-  const saveAccount = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name.trim() || !form.phone.trim()) {
-      toast({
-        title: "Informations incomplètes",
-        description: "Renseignez au moins votre nom et votre téléphone.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setCustomer({ ...form });
-    setAccountOpen(false);
-    toast({
-      title: "Bienvenue !",
-      description: `Votre espace client est activé, ${form.name.split(" ")[0]}.`,
-    });
   };
 
   const navItems = [
@@ -163,77 +118,24 @@ export function Header() {
           />
         </form>
 
-        {/* Compte client */}
-        <Dialog open={accountOpen} onOpenChange={setAccountOpen}>
-          <DialogTrigger asChild>
-            <Button
-              variant="ghost"
-              className="hidden h-11 items-center gap-2 rounded-md px-4 text-sm font-bold text-[#111111] hover:bg-[#eeebe4] sm:inline-flex"
-              aria-label={customer ? "Mon compte client" : "Se connecter / créer un compte"}
-            >
-              {customer ? (
-                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[#141414] text-xs font-extrabold text-white">
-                  {customer.name.trim().charAt(0).toUpperCase()}
-                </span>
-              ) : (
-                <UserRound className="h-5 w-5" aria-hidden="true" />
-              )}
-              <span className="hidden lg:inline">
-                {customer ? customer.name.split(" ")[0] : "Mon compte"}
-              </span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-[#8a6a14]">Espace client</DialogTitle>
-              <DialogDescription>
-                Vos coordonnées préremplissent vos commandes.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={saveAccount} className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="acc-name">Nom complet *</Label>
-                <Input
-                  id="acc-name"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Ex. Adjovi Marie"
-                  autoComplete="name"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="acc-phone">Téléphone (WhatsApp) *</Label>
-                <Input
-                  id="acc-phone"
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="+229 01 97 00 00 00"
-                  autoComplete="tel"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="acc-email">E-mail (facultatif)</Label>
-                <Input
-                  id="acc-email"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="vous@exemple.com"
-                  autoComplete="email"
-                />
-              </div>
-              <DialogFooter>
-                <Button
-                  type="submit"
-                  className="w-full rounded-md bg-[#141414] text-white hover:bg-[#2e2e2e]"
-                >
-                  Enregistrer mon profil
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        {/* Compte client — ouvre l'espace client complet */}
+        <Button
+          variant="ghost"
+          className="hidden h-11 items-center gap-2 rounded-md px-4 text-sm font-bold text-[#111111] hover:bg-[#eeebe4] sm:inline-flex"
+          aria-label={customer ? "Mon espace client" : "Mon espace client (créé à la première commande)"}
+          onClick={() => openAccount()}
+        >
+          {customer ? (
+            <span className="flex h-7 w-7 items-center justify-center rounded-sm bg-[#141414] text-xs font-extrabold text-white">
+              {customer.name.trim().charAt(0).toUpperCase()}
+            </span>
+          ) : (
+            <UserRound className="h-5 w-5" aria-hidden="true" />
+          )}
+          <span className="hidden lg:inline">
+            {customer ? customer.name.split(" ")[0] : "Mon compte"}
+          </span>
+        </Button>
 
         {/* Panier (aperçu latéral) */}
         <Sheet open={cartOpen} onOpenChange={setCartOpen}>
