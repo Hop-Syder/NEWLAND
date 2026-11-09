@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Gift,
+  KeyRound,
   ShieldCheck,
   Sparkles,
   Wallet,
@@ -245,7 +246,9 @@ export function CheckoutView() {
                   />
                 </div>
                 <div className="grid gap-2 sm:col-span-2">
-                  <Label htmlFor="co-email">E-mail (facultatif)</Label>
+                  <Label htmlFor="co-email">
+                    E-mail — pour recevoir vos identifiants
+                  </Label>
                   <Input
                     id="co-email"
                     type="email"
@@ -257,6 +260,18 @@ export function CheckoutView() {
                   />
                 </div>
               </div>
+
+              {!customer && (
+                <p className="mt-4 flex items-start gap-2 rounded-sm bg-[#f4eeda]/60 p-3 text-xs font-semibold text-[#8a6a14]">
+                  <KeyRound
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  Première commande ? Votre compte se crée tout seul :
+                  identifiant = votre numéro, code PIN à 4 chiffres à définir
+                  après l&apos;achat, copie envoyée par email.
+                </p>
+              )}
             </section>
           </Reveal>
 

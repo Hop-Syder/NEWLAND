@@ -1,11 +1,25 @@
 "use client";
 
-import { CheckCircle2, Copy, Gem, Package, Truck, Phone } from "lucide-react";
+import { useState } from "react";
+import {
+  BadgeCheck,
+  CheckCircle2,
+  Copy,
+  Eye,
+  EyeOff,
+  Gem,
+  KeyRound,
+  Package,
+  Truck,
+  Phone,
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { formatFCFA, formatDateLong } from "@/lib/format";
-import { useShop } from "@/lib/store";
+import { isValidEmail, isValidPin, useShop } from "@/lib/store";
 import { Reveal } from "./Reveal";
 
 export function OrderSuccessView() {
@@ -127,6 +141,9 @@ export function OrderSuccessView() {
             <span className="text-sm font-extrabold text-[#d4af37]">Voir ma carte →</span>
           </button>
 
+          {/* Sécurité : code PIN à définir après la première commande */}
+          <SecuritySetupCard />
+
           <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
             <div className="rounded-md border border-[#e6e3db] p-4">
               <Package className="h-5 w-5 text-[#d4af37]" aria-hidden="true" />
@@ -179,5 +196,201 @@ export function OrderSuccessView() {
         </div>
       </Reveal>
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Sécurité — le client définit lui-même son code PIN après l'achat    */
+/* ------------------------------------------------------------------ */
+
+function SecuritySetupCard() {
+  const customer = useShop((s) => s.customer);
+  const pin = useShop((s) => s.pin);
+  const credentialsSentTo = useShop((s) => s.credentialsSentTo);
+  const setPin = useShop((s) => s.setPin);
+  const saveCustomer = useShop((s) => s.saveCustomer);
+
+  const [justSet, setJustSet] = useState(false);
+  const [skipped, setSkipped] = useState(false);
+  const [pinField, setPinField] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [email, setEmail] = useState(customer?.email ?? "");
+  const [show, setShow] = useState(false);
+
+  if (skipped) return null;
+  // Déjà sécurisé avant d'arriver ici (commandes suivantes) : rien à faire.
+  if (pin && !justSet) return null;
+  if (!customer) return null;
+
+  // Récapitulatif affiché juste après la définition du code PIN.
+  if (justSet) {
+    return (
+      <Reveal>
+        <div className="mt-4 rounded-md border border-[#d4af37] bg-[#f4eeda]/60 p-5 text-left">
+          <p className="flex items-center gap-2 font-extrabold text-[#8a6a14]">
+            <BadgeCheck className="h-5 w-5 shrink-0" aria-hidden="true" />
+            Compte sécurisé — identifiants envoyés
+          </p>
+          <dl className="mt-3 grid gap-2 text-sm">
+            <div className="flex items-center justify-between gap-4">
+              <dt className="text-muted-foreground">Identifiant</dt>
+              <dd className="font-bold">{customer.phone}</dd>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <dt className="text-muted-foreground">Code PIN</dt>
+              <dd className="font-bold tracking-[0.4em]">{pin}</dd>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <dt className="text-muted-foreground">Copie email</dt>
+              <dd className="font-bold">{credentialsSentTo}</dd>
+            </div>
+          </dl>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Conservez cet email précieusement. Vous pourrez changer votre code
+            PIN dans l&apos;espace client → Paramètres → Sécurité.
+          </p>
+        </div>
+      </Reveal>
+    );
+  }
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isValidPin(pinField)) {
+      toast({
+        title: "Code PIN invalide",
+        description: "Choisissez exactement 4 chiffres.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (pinField !== confirm) {
+      toast({
+        title: "Codes différents",
+        description: "La confirmation ne correspond pas.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const mail = email.trim();
+    if (!isValidEmail(mail)) {
+      toast({
+        title: "Email requis",
+        description: "La copie de vos identifiants y sera envoyée.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (mail !== (customer.email ?? "")) {
+      saveCustomer({ ...customer, email: mail });
+    }
+    setPin(pinField);
+    setJustSet(true);
+    toast({
+      title: "Compte sécurisé",
+      description: `Copie des identifiants envoyée à ${mail}.`,
+    });
+  };
+
+  return (
+    <Reveal>
+      <div className="mt-4 rounded-md border border-[#e6e3db] bg-white p-5 text-left shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#141414]">
+            <KeyRound className="h-5 w-5 text-[#d4af37]" aria-hidden="true" />
+          </span>
+          <div>
+            <p className="font-extrabold text-[#111111]">
+              Sécurisez votre compte
+            </p>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Identifiant :{" "}
+              <span className="font-bold text-[#111111]">
+                {customer.phone}
+              </span>
+              . Choisissez un code PIN à 4 chiffres : une copie de vos
+              identifiants sera envoyée par email.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={submit} className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2">
+            <Label htmlFor="sec-pin">Code PIN (4 chiffres) *</Label>
+            <div className="relative">
+              <Input
+                id="sec-pin"
+                type={show ? "text" : "password"}
+                inputMode="numeric"
+                maxLength={4}
+                value={pinField}
+                onChange={(e) =>
+                  setPinField(e.target.value.replace(/\D/g, ""))
+                }
+                autoComplete="new-password"
+                className="h-11 rounded-md border-[#d8d4ca] pr-11 tracking-[0.5em]"
+              />
+              <button
+                type="button"
+                aria-label={show ? "Masquer le code" : "Afficher le code"}
+                onClick={() => setShow((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8f8f8f] hover:text-[#111111]"
+              >
+                {show ? (
+                  <EyeOff className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Eye className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="sec-confirm">Confirmer *</Label>
+            <Input
+              id="sec-confirm"
+              type="password"
+              inputMode="numeric"
+              maxLength={4}
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value.replace(/\D/g, ""))}
+              autoComplete="new-password"
+              className="h-11 rounded-md border-[#d8d4ca] tracking-[0.5em]"
+            />
+          </div>
+          <div className="grid gap-2 sm:col-span-2">
+            <Label htmlFor="sec-email">Email de réception *</Label>
+            <Input
+              id="sec-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="vous@exemple.com"
+              autoComplete="email"
+              className="h-11 rounded-md border-[#d8d4ca]"
+            />
+            <p className="text-xs text-muted-foreground">
+              Une copie de vos identifiants (numéro + code PIN) y sera envoyée.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 sm:col-span-2">
+            <Button
+              type="submit"
+              className="rounded-md bg-[#d4af37] font-extrabold text-[#0b0b0b] hover:bg-[#bfa032]"
+            >
+              <BadgeCheck className="h-4 w-4" aria-hidden="true" />
+              Sécuriser mon compte
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="rounded-md font-bold text-[#3d3d3d] hover:bg-[#f1efe9]"
+              onClick={() => setSkipped(true)}
+            >
+              Plus tard
+            </Button>
+          </div>
+        </form>
+      </div>
+    </Reveal>
   );
 }

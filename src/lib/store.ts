@@ -179,6 +179,18 @@ interface ShopState {
 
   accountTab: AccountTab;
 
+  /** — Sécurité du compte — */
+  /** Code PIN à 4 chiffres choisi par le client après sa première commande.
+   *  null = pas encore défini. Démo : stocké sur l'appareil ; en production il
+   *  serait haché côté serveur (bcrypt/argon2) et jamais expédié en clair. */
+  pin: string | null;
+  /** Date (ISO) de définition du code PIN. */
+  pinSetAt: string | null;
+  /** Email auquel la copie des identifiants a été envoyée (simulation). */
+  credentialsSentTo: string | null;
+  /** Compte déverrouillé sur cet appareil (déconnexion → verrouillé). */
+  sessionActive: boolean;
+
   goHome: () => void;
   openCatalog: (category?: string) => void;
   openProduct: (id: string) => void;
@@ -197,13 +209,23 @@ interface ShopState {
   setAccountTab: (tab: AccountTab) => void;
   /** Arme / retire la récompense fidélité pour la prochaine commande. */
   setActiveReward: (reward: Reward | null) => void;
+  /** Définit (ou change) le code PIN à 4 chiffres et envoie la copie des
+   *  identifiants (numéro + PIN) par email — simulation. */
+  setPin: (pin: string) => void;
+  /** Renvoie la copie des identifiants par email. Retourne l'email utilisé,
+   *  ou null si aucun email n'est enregistré. */
+  resendCredentials: () => string | null;
+  /** Déverrouille l'espace client sur cet appareil (après vérification). */
+  unlock: () => void;
+  /** Verrouille l'espace client (déconnexion). */
+  logout: () => void;
   placeOrder: (input: PlaceOrderInput) => void;
   resetToHome: () => void;
 }
 
 export const useShop = create<ShopState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       view: "home",
       productId: null,
       catalogCategory: "all",
@@ -216,6 +238,10 @@ export const useShop = create<ShopState>()(
       lifetimePoints: 0,
       activeReward: null,
       accountTab: "overview",
+      pin: null,
+      pinSetAt: null,
+      credentialsSentTo: null,
+      sessionActive: false,
 
       goHome: () =>
         set({ view: "home", productId: null, searchQuery: "" }),
@@ -269,11 +295,36 @@ export const useShop = create<ShopState>()(
 
       clearCart: () => set({ cart: [] }),
 
-      saveCustomer: (c) => set({ customer: c }),
+      saveCustomer: (c) =>
+        set((s) => ({
+          customer: c,
+          // Création manuelle du compte : session ouverte d'office.
+          sessionActive: s.customer ? s.sessionActive : true,
+        })),
 
       setAccountTab: (tab) => set({ accountTab: tab }),
 
       setActiveReward: (reward) => set({ activeReward: reward }),
+
+      setPin: (pin) =>
+        set((s) => ({
+          pin,
+          pinSetAt: new Date().toISOString(),
+          // Le compte est déverrouillé et la copie des identifiants
+          // (numéro + code PIN) part par email — simulation d'envoi.
+          sessionActive: true,
+          credentialsSentTo: s.customer?.email ?? null,
+        })),
+
+      resendCredentials: () => {
+        const email = get().customer?.email ?? null;
+        if (email) set({ credentialsSentTo: email });
+        return email;
+      },
+
+      unlock: () => set({ sessionActive: true }),
+
+      logout: () => set({ sessionActive: false }),
 
       placeOrder: (input) =>
         set((s) => {
@@ -342,6 +393,9 @@ export const useShop = create<ShopState>()(
             lifetimePoints: s.lifetimePoints + pointsEarned,
             activeReward: null,
             cart: [],
+            // Le système enregistre le client et ouvre sa session :
+            // identifiants = numéro de téléphone + code PIN (à définir).
+            sessionActive: true,
             view: "success",
           };
         }),
@@ -360,6 +414,10 @@ export const useShop = create<ShopState>()(
         loyaltyPoints: s.loyaltyPoints,
         lifetimePoints: s.lifetimePoints,
         activeReward: s.activeReward,
+        pin: s.pin,
+        pinSetAt: s.pinSetAt,
+        credentialsSentTo: s.credentialsSentTo,
+        sessionActive: s.sessionActive,
       }),
     }
   )
@@ -426,4 +484,23 @@ export function warrantyActive(order: Order, now = Date.now()): boolean {
 /** Montant déjà dépensé au total (hors réductions fidélité). */
 export function lifetimeSpent(orders: Order[]): number {
   return orders.reduce((sum, o) => sum + o.subtotal, 0);
+}
+
+/* ————— Sécurité : validation des identifiants ————— */
+
+/** Compare deux numéros en ignorant espaces, tirets et indicatif 229. */
+export function phoneMatches(a: string, b: string): boolean {
+  const da = a.replace(/\D/g, "").replace(/^229/, "");
+  const db = b.replace(/\D/g, "").replace(/^229/, "");
+  return da.length > 0 && da === db;
+}
+
+/** Code PIN valide : exactement 4 chiffres. */
+export function isValidPin(pin: string): boolean {
+  return /^\d{4}$/.test(pin);
+}
+
+/** Email plausible (validation simple côté interface). */
+export function isValidEmail(email: string): boolean {
+  return /^\S+@\S+\.\S+$/.test(email);
 }

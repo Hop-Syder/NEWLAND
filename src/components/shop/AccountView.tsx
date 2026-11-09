@@ -14,10 +14,16 @@ import {
   CalendarClock,
   ChevronDown,
   Copy,
+  Eye,
+  EyeOff,
   Gem,
   Gift,
   Headset,
+  KeyRound,
   LayoutDashboard,
+  LockKeyhole,
+  LogOut,
+  MailCheck,
   MapPin,
   Package,
   PackageCheck,
@@ -75,7 +81,10 @@ import {
   type Reward,
 } from "@/lib/loyalty";
 import {
+  isValidEmail,
+  isValidPin,
   orderStage,
+  phoneMatches,
   useShop,
   warrantyActive,
   warrantyEnd,
@@ -101,10 +110,14 @@ const TABS: { id: AccountTab; label: string; icon: typeof Package }[] = [
 
 export function AccountView() {
   const customer = useShop((s) => s.customer);
+  const sessionActive = useShop((s) => s.sessionActive);
   const accountTab = useShop((s) => s.accountTab);
   const setAccountTab = useShop((s) => s.setAccountTab);
 
-  if (!customer) return <GuestAccount onCreate={() => setAccountTab("settings")} />;
+  if (!customer) return <GuestAccount />;
+
+  // Sécurité : espace verrouillé tant que numéro + code PIN ne sont pas validés.
+  if (!sessionActive) return <LoginGate />;
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 lg:py-12">
@@ -167,8 +180,9 @@ export function AccountView() {
 /* Visiteur (pas encore de compte)                                     */
 /* ------------------------------------------------------------------ */
 
-function GuestAccount({ onCreate }: { onCreate: () => void }) {
+function GuestAccount() {
   const openCatalog = useShop((s) => s.openCatalog);
+  const [showForm, setShowForm] = useState(false);
   const perks = [
     {
       icon: Package,
@@ -206,7 +220,8 @@ function GuestAccount({ onCreate }: { onCreate: () => void }) {
             Aucune inscription à faire :{" "}
             <span className="font-bold text-[#8a6a14]">
               il se crée automatiquement à votre première commande.
-            </span>
+            </span>{" "}
+            Sécurisez-le ensuite avec un code PIN à 4 chiffres.
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             <Button
@@ -220,7 +235,7 @@ function GuestAccount({ onCreate }: { onCreate: () => void }) {
               size="lg"
               variant="outline"
               className="h-12 rounded-md border-[#d4af37] px-7 font-bold text-[#8a6a14] hover:bg-[#f4eeda]"
-              onClick={onCreate}
+              onClick={() => setShowForm(true)}
             >
               Créer mon compte maintenant
             </Button>
@@ -239,6 +254,277 @@ function GuestAccount({ onCreate }: { onCreate: () => void }) {
           </Reveal>
         ))}
       </div>
+
+      {showForm && (
+        <div className="mt-8">
+          <SettingsTab />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Porte sécurisée — compte existant mais session verrouillée          */
+/* ------------------------------------------------------------------ */
+
+function LoginGate() {
+  const customer = useShop((s) => s.customer);
+  const pinStored = useShop((s) => s.pin);
+  const setPin = useShop((s) => s.setPin);
+  const unlock = useShop((s) => s.unlock);
+  const saveCustomer = useShop((s) => s.saveCustomer);
+  const resendCredentials = useShop((s) => s.resendCredentials);
+
+  const [phone, setPhone] = useState("");
+  const [pin, setPinField] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [email, setEmail] = useState(customer?.email ?? "");
+  const [show, setShow] = useState(false);
+  const [wipeArmed, setWipeArmed] = useState(false);
+
+  const hasPin = typeof pinStored === "string";
+  const lastDigits = customer
+    ? customer.phone.replace(/\D/g, "").slice(-4)
+    : "";
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customer) return;
+
+    if (!phoneMatches(phone, customer.phone)) {
+      toast({
+        title: "Numéro inconnu",
+        description: "Aucun compte lié à ce numéro sur cet appareil.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!hasPin) {
+      // Première sécurisation : le client choisit lui-même son code PIN.
+      if (!isValidPin(pin)) {
+        toast({
+          title: "Code PIN invalide",
+          description: "Choisissez exactement 4 chiffres.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (pin !== confirm) {
+        toast({
+          title: "Codes différents",
+          description: "La confirmation ne correspond pas.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const mail = email.trim();
+      if (!isValidEmail(mail)) {
+        toast({
+          title: "Email requis",
+          description: "La copie de vos identifiants y sera envoyée.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (mail !== (customer.email ?? "")) {
+        saveCustomer({ ...customer, email: mail });
+      }
+      setPin(pin);
+      toast({
+        title: "Compte sécurisé",
+        description: `Copie des identifiants envoyée à ${mail}.`,
+      });
+      return;
+    }
+
+    if (pin !== pinStored) {
+      toast({
+        title: "Code PIN incorrect",
+        description: "Réessayez ou demandez une copie par email.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    unlock();
+    toast({
+      title: `Bienvenue ${customer.name.split(" ")[0]} !`,
+      description: "Votre espace client est déverrouillé.",
+    });
+  };
+
+  const forgot = () => {
+    const mail = resendCredentials();
+    if (mail) {
+      toast({
+        title: "Copie envoyée",
+        description: `Vos identifiants ont été renvoyés à ${mail}.`,
+      });
+    } else {
+      toast({
+        title: "Aucun email enregistré",
+        description: "Effacez ce compte de cet appareil, puis recommandez.",
+      });
+    }
+  };
+
+  const wipe = () => {
+    try {
+      useShop.persist.clearStorage();
+    } catch {
+      /* stockage indisponible : on recharge quand même */
+    }
+    window.location.reload();
+  };
+
+  return (
+    <div className="mx-auto w-full max-w-md px-4 py-12 lg:py-16">
+      <Reveal>
+        <div className="rounded-md border border-[#e6e3db] bg-white p-6 shadow-sm sm:p-8">
+          <div className="text-center">
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-md bg-[#141414]">
+              <LockKeyhole className="h-7 w-7 text-[#d4af37]" aria-hidden="true" />
+            </span>
+            <h1 className="mt-4 text-2xl font-extrabold text-[#0b0b0b]">
+              Espace client sécurisé
+            </h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {hasPin
+                ? "Identifiez-vous avec votre numéro et votre code PIN à 4 chiffres."
+                : "Confirmez votre numéro, puis choisissez votre code PIN à 4 chiffres."}
+            </p>
+            {lastDigits && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Compte enregistré se terminant par {lastDigits}
+              </p>
+            )}
+          </div>
+
+          <form onSubmit={submit} className="mt-6 grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="lg-phone">Téléphone (identifiant) *</Label>
+              <Input
+                id="lg-phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+229 01 97 00 00 00"
+                autoComplete="username"
+                className="h-11 rounded-sm border-[#d8d4ca]"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="lg-pin">
+                {hasPin ? "Code PIN *" : "Nouveau code PIN (4 chiffres) *"}
+              </Label>
+              <div className="relative">
+                <Input
+                  id="lg-pin"
+                  type={show ? "text" : "password"}
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={pin}
+                  onChange={(e) => setPinField(e.target.value.replace(/\D/g, ""))}
+                  autoComplete={hasPin ? "current-password" : "new-password"}
+                  className="h-11 rounded-sm border-[#d8d4ca] pr-11 tracking-[0.5em]"
+                />
+                <button
+                  type="button"
+                  aria-label={show ? "Masquer le code" : "Afficher le code"}
+                  onClick={() => setShow((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8f8f8f] hover:text-[#111111]"
+                >
+                  {show ? (
+                    <EyeOff className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <Eye className="h-4 w-4" aria-hidden="true" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {!hasPin && (
+              <>
+                <div className="grid gap-2">
+                  <Label htmlFor="lg-confirm">Confirmer le code PIN *</Label>
+                  <Input
+                    id="lg-confirm"
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={confirm}
+                    onChange={(e) =>
+                      setConfirm(e.target.value.replace(/\D/g, ""))
+                    }
+                    autoComplete="new-password"
+                    className="h-11 rounded-sm border-[#d8d4ca] tracking-[0.5em]"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="lg-email">Email de réception *</Label>
+                  <Input
+                    id="lg-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="vous@exemple.com"
+                    autoComplete="email"
+                    className="h-11 rounded-sm border-[#d8d4ca]"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Une copie de vos identifiants (numéro + code PIN) y sera
+                    envoyée.
+                  </p>
+                </div>
+              </>
+            )}
+
+            <Button
+              type="submit"
+              size="lg"
+              className="h-12 rounded-sm bg-[#d4af37] font-extrabold text-[#0b0b0b] hover:bg-[#bfa032]"
+            >
+              {hasPin ? "Déverrouiller mon espace" : "Sécuriser mon compte"}
+            </Button>
+          </form>
+
+          {hasPin && (
+            <button
+              type="button"
+              onClick={forgot}
+              className="mt-3 w-full text-center text-sm font-bold text-[#8a6a14] underline-offset-2 hover:underline"
+            >
+              Identifiants oubliés ? Renvoyer une copie par email
+            </button>
+          )}
+
+          <Separator className="my-5" />
+
+          <p className="text-center text-xs text-muted-foreground">
+            Ce n&apos;est pas votre compte ?{" "}
+            {wipeArmed ? (
+              <button
+                type="button"
+                onClick={wipe}
+                className="font-bold text-[#c6482f] underline"
+              >
+                Confirmer l&apos;effacement
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setWipeArmed(true)}
+                className="font-bold underline underline-offset-2 hover:text-[#111111]"
+              >
+                Effacer les données de cet appareil
+              </button>
+            )}
+          </p>
+        </div>
+      </Reveal>
     </div>
   );
 }
@@ -955,7 +1241,8 @@ function SettingsTab() {
   };
 
   return (
-    <form onSubmit={save} className="flex flex-col gap-6" noValidate={false}>
+    <div className="flex flex-col gap-6">
+      <form onSubmit={save} className="flex flex-col gap-6" noValidate={false}>
       {/* Profil */}
       <section aria-labelledby="st-profile" className="rounded-md border border-[#e6e3db] bg-white p-5 sm:p-6">
         <h2 id="st-profile" className="flex items-center gap-2 text-lg font-extrabold text-[#8a6a14]">
@@ -1063,9 +1350,354 @@ function SettingsTab() {
         )}
       </div>
 
+      </form>
+
+      {/* Sécurité — identifiant, code PIN, copie email, session */}
+      {!isCreating && <SecuritySection />}
+
       {/* Danger — uniquement si un compte existe */}
       {!isCreating && <DangerZone />}
-    </form>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Sécurité — identifiants de connexion, code PIN, session             */
+/* ------------------------------------------------------------------ */
+
+function SecuritySection() {
+  const customer = useShop((s) => s.customer);
+  const pin = useShop((s) => s.pin);
+  const pinSetAt = useShop((s) => s.pinSetAt);
+  const credentialsSentTo = useShop((s) => s.credentialsSentTo);
+  const sessionActive = useShop((s) => s.sessionActive);
+  const setPin = useShop((s) => s.setPin);
+  const saveCustomer = useShop((s) => s.saveCustomer);
+  const resendCredentials = useShop((s) => s.resendCredentials);
+  const logout = useShop((s) => s.logout);
+
+  const [mode, setMode] = useState<"closed" | "setup" | "change">("closed");
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [email, setEmail] = useState(customer?.email ?? "");
+  const [show, setShow] = useState(false);
+
+  if (!customer) return null;
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (mode === "change" && current !== pin) {
+      toast({
+        title: "Code actuel incorrect",
+        description: "Vérifiez votre code PIN actuel.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!isValidPin(next)) {
+      toast({
+        title: "Code PIN invalide",
+        description: "Choisissez exactement 4 chiffres.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (next !== confirm) {
+      toast({
+        title: "Codes différents",
+        description: "La confirmation ne correspond pas.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const mail = email.trim();
+    if (!isValidEmail(mail)) {
+      toast({
+        title: "Email requis",
+        description: "La copie de vos identifiants y sera envoyée.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (mail !== (customer.email ?? "")) {
+      saveCustomer({ ...customer, email: mail });
+    }
+    setPin(next);
+    setMode("closed");
+    setCurrent("");
+    setNext("");
+    setConfirm("");
+    toast({
+      title: mode === "change" ? "Code PIN modifié" : "Code PIN défini",
+      description: `Copie des identifiants envoyée à ${mail}.`,
+    });
+  };
+
+  const resend = () => {
+    const mail = resendCredentials();
+    if (mail) {
+      toast({
+        title: "Copie renvoyée",
+        description: `Identifiants renvoyés à ${mail}.`,
+      });
+    } else {
+      toast({
+        title: "Aucun email enregistré",
+        description: "Ajoutez un email dans « Mes coordonnées ».",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <section
+      aria-labelledby="st-security"
+      className="rounded-md border border-[#e6e3db] bg-white p-5 sm:p-6"
+    >
+      <h2
+        id="st-security"
+        className="flex items-center gap-2 text-lg font-extrabold text-[#8a6a14]"
+      >
+        <KeyRound className="h-5 w-5" aria-hidden="true" />
+        Sécurité
+      </h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Identifiant : votre numéro de téléphone · code PIN à 4 chiffres choisi
+        par vous · copie des identifiants envoyée par email.
+      </p>
+
+      <div className="mt-4">
+        {/* Identifiant de connexion */}
+        <div className="flex flex-wrap items-center justify-between gap-3 py-3.5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-[#f4eeda]">
+              <Phone className="h-4 w-4 text-[#8a6a14]" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-sm font-extrabold text-[#111111]">
+                Identifiant de connexion
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Votre numéro de téléphone
+              </p>
+            </div>
+          </div>
+          <p className="font-bold text-[#111111]">{customer.phone}</p>
+        </div>
+
+        {/* Code PIN */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#e6e3db] py-3.5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-[#f4eeda]">
+              <KeyRound className="h-4 w-4 text-[#8a6a14]" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-sm font-extrabold text-[#111111]">
+                Code PIN à 4 chiffres
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {pin
+                  ? `Défini le ${pinSetAt ? formatDateLong(new Date(pinSetAt)) : "—"}`
+                  : "Pas encore défini — sécurisez votre compte"}
+              </p>
+            </div>
+          </div>
+          {pin ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-sm border-[#d8d4ca] font-bold"
+              onClick={() => setMode(mode === "change" ? "closed" : "change")}
+            >
+              Changer
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              className="rounded-sm bg-[#d4af37] font-extrabold text-[#0b0b0b] hover:bg-[#bfa032]"
+              onClick={() => setMode("setup")}
+            >
+              Définir mon code PIN
+            </Button>
+          )}
+        </div>
+
+        {/* Copie des identifiants par email */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#e6e3db] py-3.5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-[#f4eeda]">
+              <MailCheck className="h-4 w-4 text-[#8a6a14]" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-sm font-extrabold text-[#111111]">
+                Copie des identifiants par email
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {credentialsSentTo
+                  ? `Envoyée à ${credentialsSentTo}`
+                  : customer.email
+                    ? `Sera envoyée à ${customer.email}`
+                    : "Aucun email enregistré"}
+              </p>
+            </div>
+          </div>
+          {pin && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-sm border-[#d8d4ca] font-bold"
+              onClick={resend}
+            >
+              Renvoyer
+            </Button>
+          )}
+        </div>
+
+        {/* Session */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#e6e3db] py-3.5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-[#f4eeda]">
+              <LockKeyhole
+                className="h-4 w-4 text-[#8a6a14]"
+                aria-hidden="true"
+              />
+            </span>
+            <div>
+              <p className="text-sm font-extrabold text-[#111111]">Session</p>
+              <p className="text-xs text-muted-foreground">
+                {sessionActive
+                  ? "Déverrouillée sur cet appareil"
+                  : "Verrouillée"}
+              </p>
+            </div>
+          </div>
+          {sessionActive && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-sm border-[#c6482f]/40 font-bold text-[#c6482f] hover:bg-[#f8e2dc]"
+              onClick={() => {
+                logout();
+                toast({
+                  title: "Déconnecté",
+                  description: "Votre espace client est verrouillé.",
+                });
+              }}
+            >
+              <LogOut className="h-4 w-4" aria-hidden="true" />
+              Se déconnecter
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {mode !== "closed" && (
+        <form
+          onSubmit={submit}
+          className="mt-2 grid gap-3 rounded-sm bg-[#f1efe9]/60 p-4 sm:max-w-md"
+        >
+          <p className="text-sm font-extrabold text-[#111111]">
+            {mode === "change"
+              ? "Changer mon code PIN"
+              : "Définir mon code PIN"}
+          </p>
+          {mode === "change" && (
+            <div className="grid gap-2">
+              <Label htmlFor="sec-current">Code PIN actuel *</Label>
+              <Input
+                id="sec-current"
+                type="password"
+                inputMode="numeric"
+                maxLength={4}
+                value={current}
+                onChange={(e) => setCurrent(e.target.value.replace(/\D/g, ""))}
+                autoComplete="current-password"
+                className="h-11 rounded-sm border-[#d8d4ca] tracking-[0.5em]"
+              />
+            </div>
+          )}
+          <div className="grid gap-2">
+            <Label htmlFor="sec-next">
+              {mode === "change"
+                ? "Nouveau code PIN *"
+                : "Code PIN (4 chiffres) *"}
+            </Label>
+            <div className="relative">
+              <Input
+                id="sec-next"
+                type={show ? "text" : "password"}
+                inputMode="numeric"
+                maxLength={4}
+                value={next}
+                onChange={(e) => setNext(e.target.value.replace(/\D/g, ""))}
+                autoComplete="new-password"
+                className="h-11 rounded-sm border-[#d8d4ca] pr-11 tracking-[0.5em]"
+              />
+              <button
+                type="button"
+                aria-label={show ? "Masquer le code" : "Afficher le code"}
+                onClick={() => setShow((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8f8f8f] hover:text-[#111111]"
+              >
+                {show ? (
+                  <EyeOff className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Eye className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="sec-confirm">Confirmer *</Label>
+            <Input
+              id="sec-confirm"
+              type="password"
+              inputMode="numeric"
+              maxLength={4}
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value.replace(/\D/g, ""))}
+              autoComplete="new-password"
+              className="h-11 rounded-sm border-[#d8d4ca] tracking-[0.5em]"
+            />
+          </div>
+          {!customer.email && (
+            <div className="grid gap-2">
+              <Label htmlFor="sec-email">Email de réception *</Label>
+              <Input
+                id="sec-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="vous@exemple.com"
+                autoComplete="email"
+                className="h-11 rounded-sm border-[#d8d4ca]"
+              />
+              <p className="text-xs text-muted-foreground">
+                Une copie de vos identifiants (numéro + code PIN) y sera
+                envoyée.
+              </p>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Button
+              type="submit"
+              className="rounded-sm bg-[#d4af37] font-extrabold text-[#0b0b0b] hover:bg-[#bfa032]"
+            >
+              Enregistrer
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="rounded-sm font-bold text-[#3d3d3d] hover:bg-[#f1efe9]"
+              onClick={() => setMode("closed")}
+            >
+              Annuler
+            </Button>
+          </div>
+        </form>
+      )}
+    </section>
   );
 }
 
