@@ -33,6 +33,7 @@ function matchesSearch(p: Product, q: string): boolean {
     p.shortDescription,
     p.description,
     ...p.features,
+    ...(p.tags ?? []),
   ]
     .join(" ")
     .toLowerCase();
@@ -48,10 +49,18 @@ export function CatalogView() {
 
   const [sort, setSort] = useState<SortKey>("pertinence");
   const [onlyStock, setOnlyStock] = useState(false);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
   const ABS_MAX = products.length
     ? Math.max(...products.map((p) => p.price))
     : 0;
   const [maxPrice, setMaxPrice] = useState<number>(ABS_MAX);
+
+  // Étiquettes disponibles (posées par l'admin), triées alphabétiquement.
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of products) for (const t of p.tags ?? []) set.add(t);
+    return [...set].sort((a, b) => a.localeCompare(b, "fr"));
+  }, [products]);
 
   const results = useMemo(() => {
     const cat = catalogCategory === "all" ? null : catalogCategory;
@@ -59,6 +68,8 @@ export function CatalogView() {
       (p) => (!cat || p.category === cat) && matchesSearch(p, searchQuery)
     );
     if (onlyStock) list = list.filter((p) => p.availability === "in_stock");
+    if (activeTag)
+      list = list.filter((p) => (p.tags ?? []).includes(activeTag));
     list = list.filter((p) => p.price <= maxPrice);
 
     switch (sort) {
@@ -78,7 +89,7 @@ export function CatalogView() {
         );
     }
     return list;
-  }, [products, catalogCategory, searchQuery, onlyStock, maxPrice, sort]);
+  }, [products, catalogCategory, searchQuery, onlyStock, activeTag, maxPrice, sort]);
 
   const activeCategoryLabel =
     catalogCategory === "all"
@@ -87,6 +98,7 @@ export function CatalogView() {
 
   const resetFilters = () => {
     setOnlyStock(false);
+    setActiveTag(null);
     setMaxPrice(ABS_MAX);
     setSort("pertinence");
     setSearch("");
@@ -146,6 +158,39 @@ export function CatalogView() {
           ))}
         </div>
       </Reveal>
+
+      {/* Filtre par étiquettes (tags gérés dans l'admin) */}
+      {allTags.length > 0 && (
+        <Reveal delay={80}>
+          <div
+            role="group"
+            aria-label="Filtrer par étiquette"
+            className="mb-6 flex flex-wrap items-center gap-2"
+          >
+            <span className="text-sm font-bold text-[#808080]">
+              Étiquettes&nbsp;:
+            </span>
+            {allTags.map((t) => {
+              const active = activeTag === t;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setActiveTag(active ? null : t)}
+                  className={`rounded-md px-3 py-1.5 text-sm font-bold transition-colors ${
+                    active
+                      ? "bg-[#d4af37] text-[#0b0b0b]"
+                      : "border border-[#d8d4ca] bg-white text-[#111111] hover:bg-[#f4eeda]"
+                  }`}
+                >
+                  {t}
+                </button>
+              );
+            })}
+          </div>
+        </Reveal>
+      )}
 
       <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
         {/* Barre latérale de filtres */}

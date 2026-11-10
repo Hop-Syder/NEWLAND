@@ -3,10 +3,11 @@
 /**
  * Espace administrateur Maison Cauris (/admin).
  *
- * Tableau de bord pour suivre le site : chiffre d'affaires, commandes
- * (statuts modifiables), comptes clients (points fidélité, PIN), catalogue
- * (ajout / édition / suppression de produits + stocks), réglages du site
- * (bandeau d'annonce, export CSV, réinitialisation des données de démo).
+ * Tableau de bord pour piloter tout le site : chiffre d'affaires, commandes
+ * (statuts modifiables), comptes clients (points fidélité, PIN, suivi des
+ * achats, suppression de comptes), catalogue (ajout / édition / suppression,
+ * promotions, tags, stocks), réglages du site (bandeau d'annonce, export CSV,
+ * réinitialisation des données de démo).
  *
  * Démo sans backend : la session admin et les données vivent dans le store
  * persisté ; le mot de passe est fixé côté client (ADMIN_PASSWORD).
@@ -16,11 +17,13 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
+  BadgePercent,
   Banknote,
   Boxes,
   ChevronDown,
   Download,
   Gem,
+  History,
   KeyRound,
   LayoutDashboard,
   LogOut,
@@ -78,6 +81,7 @@ import { tierFor } from "@/lib/loyalty";
 import {
   ADMIN_PASSWORD,
   ORDER_STATUS_LABELS,
+  phoneMatches,
   useShop,
   type ClientAccount,
   type Order,
@@ -129,6 +133,26 @@ function relDate(iso: string): string {
 function statusOf(o: Order): OrderStatus {
   return o.status ?? "en_attente";
 }
+
+/** Pourcentage de réduction en cours, ou null si le produit n'est pas en promo. */
+function promoPct(p: Product): number | null {
+  if (p.oldPrice && p.oldPrice > p.price) {
+    return Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
+  }
+  return null;
+}
+
+/** Suggestions de tags proposées dans le formulaire produit. */
+const TAG_SUGGESTIONS = [
+  "Nouveau",
+  "Best-seller",
+  "Promo",
+  "Essentiel",
+  "Famille",
+  "Fait main",
+  "Livraison rapide",
+  "Petit prix",
+];
 
 /** CA des 7 derniers jours, jour par jour (pour le graphique en barres). */
 function computeLast7Days(orders: Order[]): {
@@ -449,6 +473,8 @@ function DashboardTab({ onGoProducts }: { onGoProducts: () => void }) {
     (o) => statusOf(o) === "en_attente"
   ).length;
   const lowStock = products.filter((p) => (stock[p.id] ?? 0) <= 3);
+  const promoCount = products.filter((p) => promoPct(p) !== null).length;
+  const featuredCount = products.filter((p) => p.featured).length;
 
   // Chiffre d'affaires des 7 derniers jours (barres CSS, sans librairie).
   const days = computeLast7Days(adminOrders);
@@ -490,6 +516,7 @@ function DashboardTab({ onGoProducts }: { onGoProducts: () => void }) {
           icon={Boxes}
           label="Produits au catalogue"
           value={String(products.length)}
+          hint={`${promoCount} en promo · ${featuredCount} en vedette`}
         />
         <Kpi
           icon={AlertTriangle}
@@ -901,6 +928,8 @@ function ClientsTab() {
 
 function ClientCard({ client: c }: { client: ClientAccount }) {
   const tier = tierFor(c.lifetimePoints);
+  const deleteClient = useShop((s) => s.deleteClient);
+  const [purchasesOpen, setPurchasesOpen] = useState(false);
   return (
     <div className="rounded-md border border-[#2a2a2a] bg-[#161616] p-4">
       <div className="flex items-start justify-between gap-3">
@@ -977,7 +1006,367 @@ function ClientCard({ client: c }: { client: ClientAccount }) {
           </dd>
         </div>
       </dl>
+
+      {/* Actions : suivi des achats + suppression du compte */}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="rounded-md border-[#d4af37]/50 bg-transparent font-bold text-[#d4af37] hover:bg-[#d4af37]/10"
+          onClick={() => setPurchasesOpen(true)}
+        >
+          <History className="h-4 w-4" aria-hidden="true" />
+          Suivi des achats
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-md border-[#f87171]/40 bg-transparent font-bold text-[#fca5a5] hover:bg-[#f87171]/10"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+              Supprimer le compte
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="rounded-md border-[#2a2a2a] bg-[#161616]">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-[#f5f2e9]">
+                Supprimer le compte de {c.name} ?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-[#a3a3a3]">
+                Le compte disparaît de la liste des clients (points fidélité
+                inclus). Les commandes déjà passées restent dans
+                l&apos;historique de la boutique. Action immédiate.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="rounded-md border-[#2a2a2a] bg-transparent text-[#f5f2e9] hover:bg-[#1e1e1e]">
+                Annuler
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="rounded-md bg-[#f87171] font-bold text-[#0b0b0b] hover:bg-[#ef4444]"
+                onClick={() => {
+                  deleteClient(c.id);
+                  toast({
+                    title: "Compte supprimé",
+                    description: `${c.name} a été retiré des comptes clients.`,
+                  });
+                }}
+              >
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+
+      <ClientOrdersDialog
+        client={c}
+        open={purchasesOpen}
+        onClose={() => setPurchasesOpen(false)}
+      />
     </div>
+  );
+}
+
+/* ————— Suivi des achats d'un client (dialog) ————— */
+
+function ClientOrdersDialog({
+  client,
+  open,
+  onClose,
+}: {
+  client: ClientAccount;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const adminOrders = useShop((s) => s.adminOrders);
+
+  const orders = useMemo(
+    () =>
+      adminOrders
+        .filter((o) => phoneMatches(client.phone, o.phone))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [adminOrders, client.phone]
+  );
+  const valid = orders.filter((o) => statusOf(o) !== "annulee");
+  const spent = valid.reduce((sum, o) => sum + o.subtotal, 0);
+  const avg = valid.length ? Math.round(spent / valid.length) : 0;
+
+  // Produit le plus acheté par ce client (hors commandes annulées).
+  const topProduct = useMemo(() => {
+    const tally = new Map<string, { name: string; qty: number }>();
+    for (const o of valid)
+      for (const l of o.lines) {
+        const cur = tally.get(l.productId) ?? { name: l.name, qty: 0 };
+        cur.qty += l.qty;
+        tally.set(l.productId, cur);
+      }
+    return (
+      [...tally.values()].sort((a, b) => b.qty - a.qty)[0] ?? null
+    );
+  }, [valid]);
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
+      <DialogContent className="max-h-[90vh] overflow-y-auto rounded-md border-[#2a2a2a] bg-[#161616] text-[#f5f2e9] sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-[#f5f2e9]">
+            Suivi des achats — {client.name}
+          </DialogTitle>
+          <DialogDescription className="text-[#a3a3a3]">
+            Historique complet des commandes de ce client ({client.phone}).
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          {[
+            { label: "Commandes valides", value: String(valid.length) },
+            { label: "Total dépensé", value: formatFCFA(spent) },
+            { label: "Panier moyen", value: formatFCFA(avg) },
+            {
+              label: "Points à vie",
+              value: `${client.lifetimePoints} pts`,
+            },
+          ].map((s) => (
+            <div
+              key={s.label}
+              className="rounded-md border border-[#2a2a2a] bg-[#0b0b0b] p-3"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-wide text-[#a3a3a3]">
+                {s.label}
+              </p>
+              <p className="mt-1 text-sm font-extrabold text-[#f5f2e9]">
+                {s.value}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {topProduct && (
+          <p className="rounded-md border border-[#d4af37]/30 bg-[#d4af37]/10 px-3 py-2 text-xs font-bold text-[#d4af37]">
+            Produit le plus acheté : {topProduct.name} ({topProduct.qty} unité
+            {topProduct.qty > 1 ? "s" : ""})
+          </p>
+        )}
+
+        <div className="grid gap-2">
+          <p className="text-xs font-bold uppercase tracking-wide text-[#a3a3a3]">
+            Historique ({orders.length})
+          </p>
+          {orders.length === 0 ? (
+            <p className="rounded-md border border-dashed border-[#2a2a2a] py-8 text-center text-sm text-[#a3a3a3]">
+              Aucune commande enregistrée pour ce client.
+            </p>
+          ) : (
+            orders.map((o) => (
+              <div
+                key={o.id}
+                className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-md border border-[#2a2a2a] bg-[#0b0b0b] px-3 py-2.5 text-sm"
+              >
+                <span className="font-extrabold text-[#d4af37]">{o.id}</span>
+                <span className="text-xs text-[#a3a3a3]">
+                  {fmtDateTime(o.createdAt)}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-xs text-[#c9c9c9]">
+                  {o.lines.map((l) => `${l.qty}× ${l.name}`).join(" · ")}
+                </span>
+                <span className="font-extrabold">{formatFCFA(o.total)}</span>
+                <StatusBadge status={statusOf(o)} />
+              </div>
+            ))
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ————— Mise en promo rapide (dialog) ————— */
+
+function PromoDialog({
+  product,
+  open,
+  onClose,
+}: {
+  product: Product | null;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const applyPromo = useShop((s) => s.applyPromo);
+  const removePromo = useShop((s) => s.removePromo);
+  const [percent, setPercent] = useState("10");
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
+
+  // Réinitialise le champ quand on ouvre sur un nouveau produit.
+  if (open && product && loadedFor !== product.id) {
+    setLoadedFor(product.id);
+    setPercent(String(promoPct(product) ?? 10));
+  }
+
+  if (!product) return null;
+
+  const current = promoPct(product);
+  const base =
+    product.oldPrice && product.oldPrice > product.price
+      ? product.oldPrice
+      : product.price;
+  const pct = Math.min(90, Math.max(1, Math.round(Number(percent) || 0)));
+  const newPrice = Math.round((base * (100 - pct)) / 100);
+
+  const apply = () => {
+    if (!Number.isFinite(Number(percent)) || Number(percent) < 1) {
+      toast({
+        title: "Réduction invalide",
+        description: "Indiquez un pourcentage entre 1 et 90.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (newPrice >= base) {
+      toast({
+        title: "Réduction trop faible",
+        description: "Le nouveau prix doit être inférieur au prix actuel.",
+        variant: "destructive",
+      });
+      return;
+    }
+    applyPromo(product.id, pct);
+    toast({
+      title: "Promo appliquée",
+      description: `${product.name} : ${formatFCFA(base)} → ${formatFCFA(newPrice)} (−${pct} %)`,
+    });
+    onClose();
+  };
+
+  const inputCls =
+    "h-10 rounded-md border-[#2a2a2a] bg-[#0b0b0b] text-[#f5f2e9]";
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
+      <DialogContent className="rounded-md border-[#2a2a2a] bg-[#161616] text-[#f5f2e9] sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-[#f5f2e9]">
+            <BadgePercent
+              className="h-5 w-5 text-[#d4af37]"
+              aria-hidden="true"
+            />
+            Mettre en promo
+          </DialogTitle>
+          <DialogDescription className="text-[#a3a3a3]">
+            {product.name}
+          </DialogDescription>
+        </DialogHeader>
+
+        {current !== null && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[#d4af37]/40 bg-[#d4af37]/10 px-3 py-2.5 text-sm">
+            <span className="font-bold text-[#d4af37]">
+              Promo en cours : −{current} % ({formatFCFA(product.oldPrice!)}{" "}
+              → {formatFCFA(product.price)})
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-md border-[#f87171]/50 bg-transparent font-bold text-[#fca5a5] hover:bg-[#f87171]/10"
+              onClick={() => {
+                removePromo(product.id);
+                toast({
+                  title: "Promo retirée",
+                  description: `${product.name} : retour à ${formatFCFA(product.oldPrice!)}`,
+                });
+                onClose();
+              }}
+            >
+              Retirer
+            </Button>
+          </div>
+        )}
+
+        <div className="grid gap-3">
+          <div
+            className="flex flex-wrap gap-2"
+            role="group"
+            aria-label="Réductions rapides"
+          >
+            {[5, 10, 15, 20, 30].map((v) => (
+              <button
+                key={v}
+                type="button"
+                aria-pressed={Number(percent) === v}
+                onClick={() => setPercent(String(v))}
+                className={`rounded-md px-3 py-1.5 text-sm font-bold transition-colors ${
+                  Number(percent) === v
+                    ? "bg-[#d4af37] text-[#0b0b0b]"
+                    : "border border-[#2a2a2a] bg-[#0b0b0b] text-[#c9c9c9] hover:border-[#d4af37]/50 hover:text-[#d4af37]"
+                }`}
+              >
+                −{v} %
+              </button>
+            ))}
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="promo-pct" className="text-[#f5f2e9]">
+              Réduction personnalisée (%)
+            </Label>
+            <Input
+              id="promo-pct"
+              type="number"
+              min={1}
+              max={90}
+              value={percent}
+              onChange={(e) => setPercent(e.target.value)}
+              className={inputCls}
+            />
+          </div>
+          <div className="rounded-md border border-[#2a2a2a] bg-[#0b0b0b] p-4">
+            <div className="flex flex-wrap items-baseline gap-3">
+              <span className="text-sm text-[#a3a3a3] line-through">
+                {formatFCFA(base)}
+              </span>
+              <span className="text-xl font-extrabold text-[#d4af37]">
+                {formatFCFA(newPrice)}
+              </span>
+              <span className="rounded-md bg-[#d4af37] px-2 py-0.5 text-xs font-extrabold text-[#0b0b0b]">
+                −{pct} %
+              </span>
+            </div>
+            <p className="mt-1.5 text-xs text-[#a3a3a3]">
+              Le client économise {formatFCFA(base - newPrice)}. Le prix barré
+              s&apos;affiche sur le site.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-md border-[#2a2a2a] bg-transparent font-bold text-[#f5f2e9] hover:bg-[#1e1e1e]"
+            onClick={onClose}
+          >
+            Annuler
+          </Button>
+          <Button
+            type="button"
+            className="rounded-md bg-[#d4af37] font-extrabold text-[#0b0b0b] hover:bg-[#bfa032]"
+            onClick={apply}
+          >
+            Appliquer la promo
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -992,18 +1381,32 @@ function ProductsTab() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoTarget, setPromoTarget] = useState<Product | null>(null);
   const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<"all" | "promo" | "low" | "featured">(
+    "all"
+  );
+
+  const promoCount = products.filter((p) => promoPct(p) !== null).length;
+  const lowCount = products.filter((p) => (stock[p.id] ?? 0) <= 3).length;
+  const featuredCount = products.filter((p) => p.featured).length;
 
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return q
-      ? products.filter(
-          (p) =>
-            p.name.toLowerCase().includes(q) ||
-            p.brand.toLowerCase().includes(q)
-        )
-      : products;
-  }, [products, query]);
+    let base = products.filter(
+      (p) =>
+        !q ||
+        p.name.toLowerCase().includes(q) ||
+        p.brand.toLowerCase().includes(q) ||
+        (p.tags ?? []).some((t) => t.toLowerCase().includes(q))
+    );
+    if (filter === "promo") base = base.filter((p) => promoPct(p) !== null);
+    if (filter === "low")
+      base = base.filter((p) => (stock[p.id] ?? 0) <= 3);
+    if (filter === "featured") base = base.filter((p) => p.featured);
+    return base;
+  }, [products, query, filter, stock]);
 
   return (
     <div className="grid gap-5">
@@ -1011,8 +1414,8 @@ function ProductsTab() {
         <div>
           <h1 className="text-xl font-extrabold sm:text-2xl">Produits</h1>
           <p className="mt-1 text-sm text-[#a3a3a3]">
-            {products.length} produit(s) — ajoutez, modifiez, ajustez les
-            stocks.
+            {products.length} produit(s) — ajoutez, retirez, mettez en promo,
+            taguez, ajustez les stocks.
           </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
@@ -1043,10 +1446,44 @@ function ProductsTab() {
         </div>
       </div>
 
+      {/* Filtres rapides */}
+      <div
+        className="flex flex-wrap gap-2"
+        role="group"
+        aria-label="Filtrer les produits"
+      >
+        {(
+          [
+            ["all", `Tous (${products.length})`],
+            ["promo", `En promo (${promoCount})`],
+            ["low", `Stock faible (${lowCount})`],
+            ["featured", `En vedette (${featuredCount})`],
+          ] as const
+        ).map(([id, label]) => {
+          const active = filter === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setFilter(id)}
+              className={`rounded-md px-3.5 py-2 text-sm font-bold transition-colors ${
+                active
+                  ? "bg-[#d4af37] text-[#0b0b0b]"
+                  : "border border-[#2a2a2a] bg-[#161616] text-[#c9c9c9] hover:border-[#d4af37]/50 hover:text-[#d4af37]"
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
       <ul className="grid gap-2.5">
         {list.map((p) => {
           const qty = stock[p.id] ?? 0;
           const low = qty <= 3;
+          const promo = promoPct(p);
           return (
             <li
               key={p.id}
@@ -1064,10 +1501,42 @@ function ProductsTab() {
                     p.category}{" "}
                   · {p.brand}
                 </p>
+                {(p.tags?.length ?? 0) > 0 && (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                    {p.tags!.slice(0, 3).map((t) => (
+                      <span
+                        key={t}
+                        className="rounded-md border border-[#d4af37]/30 bg-[#d4af37]/10 px-1.5 py-0.5 text-[10px] font-bold text-[#d4af37]"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                    {(p.tags?.length ?? 0) > 3 && (
+                      <span className="text-[10px] font-bold text-[#a3a3a3]">
+                        +{p.tags!.length - 3}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
-              <span className="font-extrabold text-[#d4af37]">
-                {formatFCFA(p.price)}
-              </span>
+              <div className="text-right">
+                {promo !== null && (
+                  <Badge
+                    variant="outline"
+                    className="mb-1 inline-block rounded-md border-[#d4af37]/40 bg-[#d4af37]/10 text-[#d4af37]"
+                  >
+                    Promo −{promo} %
+                  </Badge>
+                )}
+                <span className="block font-extrabold text-[#d4af37]">
+                  {formatFCFA(p.price)}
+                </span>
+                {p.oldPrice && p.oldPrice > p.price && (
+                  <span className="text-xs text-[#a3a3a3] line-through">
+                    {formatFCFA(p.oldPrice)}
+                  </span>
+                )}
+              </div>
 
               {/* Stock modifiable en un clin d'œil */}
               <label className="flex items-center gap-2 text-xs text-[#a3a3a3]">
@@ -1097,6 +1566,22 @@ function ProductsTab() {
               </label>
 
               <div className="ml-auto flex items-center gap-1.5">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label={`Gérer la promo de ${p.name}`}
+                  className={`h-9 w-9 rounded-md hover:bg-[#1e1e1e] ${
+                    promo !== null
+                      ? "text-[#d4af37]"
+                      : "text-[#c9c9c9] hover:text-[#d4af37]"
+                  }`}
+                  onClick={() => {
+                    setPromoTarget(p);
+                    setPromoOpen(true);
+                  }}
+                >
+                  <BadgePercent className="h-4 w-4" aria-hidden="true" />
+                </Button>
                 <Button
                   size="icon"
                   variant="ghost"
@@ -1156,6 +1641,11 @@ function ProductsTab() {
         product={editing}
         onClose={() => setDialogOpen(false)}
       />
+      <PromoDialog
+        open={promoOpen}
+        product={promoTarget}
+        onClose={() => setPromoOpen(false)}
+      />
     </div>
   );
 }
@@ -1179,6 +1669,7 @@ interface ProductForm {
   featured: boolean;
   imageKey: string;
   source: string;
+  tags: string[];
 }
 
 const EMPTY_FORM: ProductForm = {
@@ -1198,6 +1689,7 @@ const EMPTY_FORM: ProductForm = {
   featured: false,
   imageKey: "none",
   source: "Ajouté via l'admin",
+  tags: [],
 };
 
 const IMAGE_KEYS = Object.keys(IMG).filter((k) => k.startsWith("p_"));
@@ -1218,6 +1710,15 @@ function ProductDialog({
 
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
   const [loadedId, setLoadedId] = useState<string | null>(null);
+  const [tagInput, setTagInput] = useState("");
+  const allProducts = useShop((s) => s.products);
+
+  // Suggestions : base fixe + tags déjà utilisés dans le catalogue.
+  const tagSuggestions = useMemo(() => {
+    const set = new Set<string>(TAG_SUGGESTIONS);
+    for (const p of allProducts) for (const t of p.tags ?? []) set.add(t);
+    return [...set];
+  }, [allProducts]);
 
   // Pré-remplit le formulaire quand on ouvre en mode édition.
   if (open && product && loadedId !== product.id) {
@@ -1243,7 +1744,9 @@ function ProductDialog({
       featured: product.featured ?? false,
       imageKey: product.imageKeys[0] ?? "none",
       source: product.source,
+      tags: product.tags ?? [],
     });
+    setTagInput("");
   }
 
   const set = (patch: Partial<ProductForm>) =>
@@ -1282,6 +1785,7 @@ function ProductDialog({
       form.imageKey !== "none" && IMG[form.imageKey] ? [form.imageKey] : [];
 
     const stockQty = Math.max(0, Number(form.stockQty) || 0);
+    const tags = [...new Set(form.tags.map((t) => t.trim()).filter(Boolean))];
 
     if (product) {
       updateProduct(product.id, {
@@ -1306,6 +1810,7 @@ function ProductDialog({
         featured: form.featured,
         warrantyMonths: hasWarranty ? Math.round(warranty) : undefined,
         imageKeys,
+        tags: tags.length ? tags : undefined,
         source: form.source.trim() || "Ajouté via l'admin",
       });
       setStock(product.id, stockQty);
@@ -1336,6 +1841,7 @@ function ProductDialog({
         practical,
         featured: form.featured,
         warrantyMonths: hasWarranty ? Math.round(warranty) : undefined,
+        tags: tags.length ? tags : undefined,
         source: form.source.trim() || "Ajouté via l'admin",
       };
       addProduct(newProduct, stockQty);
@@ -1430,7 +1936,7 @@ function ProductDialog({
             </div>
             <div className="grid gap-2">
               <Label htmlFor="pf-old" className="text-[#f5f2e9]">
-                Ancien prix
+                Prix barré (promo)
               </Label>
               <Input
                 id="pf-old"
@@ -1455,6 +1961,19 @@ function ProductDialog({
               />
             </div>
           </div>
+
+          {Number(form.oldPrice) > Number(form.price) &&
+            Number(form.price) > 0 && (
+              <p className="text-xs font-bold text-[#d4af37]">
+                Promo : −
+                {Math.round(
+                  ((Number(form.oldPrice) - Number(form.price)) /
+                    Number(form.oldPrice)) *
+                    100
+                )}{' '}
+                % — le prix barré s&apos;affiche sur le site.
+              </p>
+            )}
 
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="grid gap-2">
@@ -1557,6 +2076,72 @@ function ProductDialog({
                 className="rounded-md border-[#2a2a2a] bg-[#0b0b0b] text-[#f5f2e9]"
               />
             </div>
+          </div>
+
+          {/* Tags / étiquettes */}
+          <div className="grid gap-2">
+            <Label htmlFor="pf-tags" className="text-[#f5f2e9]">
+              Tags / étiquettes
+            </Label>
+            <Input
+              id="pf-tags"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === ",") {
+                  e.preventDefault();
+                  const v = tagInput.trim();
+                  if (v && !form.tags.includes(v))
+                    set({ tags: [...form.tags, v] });
+                  setTagInput("");
+                }
+              }}
+              onBlur={() => {
+                const v = tagInput.trim();
+                if (v && !form.tags.includes(v))
+                  set({ tags: [...form.tags, v] });
+                setTagInput("");
+              }}
+              placeholder="Ex. : Best-seller — Entrée pour valider"
+              className={inputCls}
+            />
+            {form.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {form.tags.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    aria-label={`Retirer le tag ${t}`}
+                    className="inline-flex items-center gap-1 rounded-md border border-[#d4af37]/40 bg-[#d4af37]/10 px-2 py-1 text-xs font-bold text-[#d4af37] hover:bg-[#d4af37]/20"
+                    onClick={() =>
+                      set({ tags: form.tags.filter((x) => x !== t) })
+                    }
+                  >
+                    {t}
+                    <span aria-hidden="true">×</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="flex flex-wrap gap-1.5">
+              {tagSuggestions
+                .filter((t) => !form.tags.includes(t))
+                .slice(0, 8)
+                .map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    className="rounded-md border border-[#2a2a2a] bg-[#0b0b0b] px-2 py-1 text-xs font-bold text-[#c9c9c9] hover:border-[#d4af37]/50 hover:text-[#d4af37]"
+                    onClick={() => set({ tags: [...form.tags, t] })}
+                  >
+                    + {t}
+                  </button>
+                ))}
+            </div>
+            <p className="text-xs text-[#a3a3a3]">
+              Les tags s&apos;affichent sur le site et servent de filtres dans
+              le catalogue.
+            </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">

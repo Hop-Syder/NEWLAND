@@ -21,6 +21,9 @@ export interface Product {
   featured?: boolean;
   /** Garantie boutique en mois (renseigné pour les produits ajoutés via l'admin). */
   warrantyMonths?: number;
+  /** Étiquettes libres gérées depuis l'admin (ex. « Best-seller », « Nouveau »).
+   *  Affichées sur le site et utilisables comme filtres du catalogue. */
+  tags?: string[];
   source: string; // référence marché du prix constaté
 }
 
@@ -248,6 +251,7 @@ export const PRODUCTS: Product[] = [
       "Accessoires de rechange disponibles localement",
     ],
     featured: true,
+    tags: ["Best-seller", "Promo"],
     source: "Prix constaté : vendeurs Cotonou (28 500 FCFA)",
   },
   {
@@ -301,6 +305,7 @@ export const PRODUCTS: Product[] = [
       "Notice en français incluse",
     ],
     featured: true,
+    tags: ["Nouveau"],
     source: "Prix constaté : Shoppyit Bénin (54 500 FCFA)",
   },
   {
@@ -356,6 +361,7 @@ export const PRODUCTS: Product[] = [
       "Paiement à la livraison possible",
     ],
     featured: true,
+    tags: ["Best-seller", "Famille"],
     source: "Prix constaté : vendeurs Cotonou (45 000 FCFA)",
   },
   {
@@ -384,6 +390,7 @@ export const PRODUCTS: Product[] = [
       "Idéal pour équiper une première maison",
     ],
     featured: true,
+    tags: ["Promo", "Essentiel"],
     source: "Prix constaté : vendeurs Cotonou (10 000 FCFA)",
   },
   {
@@ -573,6 +580,7 @@ export const PRODUCTS: Product[] = [
       "Montage et installation à domicile",
     ],
     featured: true,
+    tags: ["Fait main"],
     source: "Prix constaté : Avenue des Meubles, Cotonou (299 999 FCFA)",
   },
 ];

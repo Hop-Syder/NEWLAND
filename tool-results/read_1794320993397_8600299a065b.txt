@@ -1,0 +1,1852 @@
+     1→"use client";
+     2→
+     3→/**
+     4→ * Espace administrateur Maison Cauris (/admin).
+     5→ *
+     6→ * Tableau de bord pour suivre le site : chiffre d'affaires, commandes
+     7→ * (statuts modifiables), comptes clients (points fidélité, PIN), catalogue
+     8→ * (ajout / édition / suppression de produits + stocks), réglages du site
+     9→ * (bandeau d'annonce, export CSV, réinitialisation des données de démo).
+    10→ *
+    11→ * Démo sans backend : la session admin et les données vivent dans le store
+    12→ * persisté ; le mot de passe est fixé côté client (ADMIN_PASSWORD).
+    13→ */
+    14→
+    15→import { useEffect, useMemo, useState } from "react";
+    16→import {
+    17→  AlertTriangle,
+    18→  ArrowLeft,
+    19→  Banknote,
+    20→  Boxes,
+    21→  ChevronDown,
+    22→  Download,
+    23→  Gem,
+    24→  KeyRound,
+    25→  LayoutDashboard,
+    26→  LogOut,
+    27→  Megaphone,
+    28→  Pencil,
+    29→  Plus,
+    30→  RotateCcw,
+    31→  Search,
+    32→  Settings,
+    33→  Shell,
+    34→  ShieldCheck,
+    35→  ShoppingBag,
+    36→  Store,
+    37→  Trash2,
+    38→  TrendingUp,
+    39→  UsersRound,
+    40→} from "lucide-react";
+    41→import { toast } from "@/hooks/use-toast";
+    42→import { Button } from "@/components/ui/button";
+    43→import { Input } from "@/components/ui/input";
+    44→import { Label } from "@/components/ui/label";
+    45→import { Switch } from "@/components/ui/switch";
+    46→import { Badge } from "@/components/ui/badge";
+    47→import { Separator } from "@/components/ui/separator";
+    48→import { Textarea } from "@/components/ui/textarea";
+    49→import {
+    50→  Select,
+    51→  SelectContent,
+    52→  SelectItem,
+    53→  SelectTrigger,
+    54→  SelectValue,
+    55→} from "@/components/ui/select";
+    56→import {
+    57→  Dialog,
+    58→  DialogContent,
+    59→  DialogDescription,
+    60→  DialogHeader,
+    61→  DialogTitle,
+    62→} from "@/components/ui/dialog";
+    63→import {
+    64→  AlertDialog,
+    65→  AlertDialogAction,
+    66→  AlertDialogCancel,
+    67→  AlertDialogContent,
+    68→  AlertDialogDescription,
+    69→  AlertDialogFooter,
+    70→  AlertDialogHeader,
+    71→  AlertDialogTitle,
+    72→  AlertDialogTrigger,
+    73→} from "@/components/ui/alert-dialog";
+    74→import { CATEGORIES, type CategoryId, type Product } from "@/lib/products";
+    75→import { IMG, imgFor } from "@/lib/images";
+    76→import { formatFCFA } from "@/lib/format";
+    77→import { tierFor } from "@/lib/loyalty";
+    78→import {
+    79→  ADMIN_PASSWORD,
+    80→  ORDER_STATUS_LABELS,
+    81→  useShop,
+    82→  type ClientAccount,
+    83→  type Order,
+    84→  type OrderStatus,
+    85→} from "@/lib/store";
+    86→import { SafeImg } from "@/components/shop/SafeImg";
+    87→
+    88→/* ————— Types & helpers locaux ————— */
+    89→
+    90→type AdminTab = "dashboard" | "orders" | "clients" | "products" | "settings";
+    91→
+    92→const TABS: { id: AdminTab; label: string; icon: typeof LayoutDashboard }[] = [
+    93→  { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard },
+    94→  { id: "orders", label: "Commandes", icon: ShoppingBag },
+    95→  { id: "clients", label: "Comptes clients", icon: UsersRound },
+    96→  { id: "products", label: "Produits", icon: Boxes },
+    97→  { id: "settings", label: "Réglages", icon: Settings },
+    98→];
+    99→
+   100→const STATUS_BADGE: Record<OrderStatus, string> = {
+   101→  en_attente: "bg-[#d4af37]/15 text-[#d4af37] border-[#d4af37]/40",
+   102→  confirmee: "bg-[#60a5fa]/15 text-[#93c5fd] border-[#60a5fa]/40",
+   103→  livree: "bg-[#4ade80]/15 text-[#86efac] border-[#4ade80]/40",
+   104→  annulee: "bg-[#f87171]/15 text-[#fca5a5] border-[#f87171]/40",
+   105→};
+   106→
+   107→const SHORT_DATE = new Intl.DateTimeFormat("fr-FR", {
+   108→  day: "numeric",
+   109→  month: "short",
+   110→});
+   111→
+   112→function fmtDateTime(iso: string): string {
+   113→  return new Intl.DateTimeFormat("fr-FR", {
+   114→    day: "numeric",
+   115→    month: "short",
+   116→    hour: "2-digit",
+   117→    minute: "2-digit",
+   118→  }).format(new Date(iso));
+   119→}
+   120→
+   121→function relDate(iso: string): string {
+   122→  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+   123→  if (days <= 0) return "Aujourd'hui";
+   124→  if (days === 1) return "Hier";
+   125→  if (days < 7) return `Il y a ${days} j`;
+   126→  return SHORT_DATE.format(new Date(iso));
+   127→}
+   128→
+   129→function statusOf(o: Order): OrderStatus {
+   130→  return o.status ?? "en_attente";
+   131→}
+   132→
+   133→/** CA des 7 derniers jours, jour par jour (pour le graphique en barres). */
+   134→function computeLast7Days(orders: Order[]): {
+   135→  label: string;
+   136→  total: number;
+   137→  key: string;
+   138→}[] {
+   139→  const out: { label: string; total: number; key: string }[] = [];
+   140→  for (let i = 6; i >= 0; i--) {
+   141→    const d = new Date();
+   142→    d.setDate(d.getDate() - i);
+   143→    const key = d.toDateString();
+   144→    const total = orders
+   145→      .filter(
+   146→        (o) =>
+   147→          statusOf(o) !== "annulee" &&
+   148→          new Date(o.createdAt).toDateString() === key
+   149→      )
+   150→      .reduce((sum, o) => sum + o.total, 0);
+   151→    out.push({
+   152→      key,
+   153→      total,
+   154→      label: new Intl.DateTimeFormat("fr-FR", { weekday: "short" })
+   155→        .format(d)
+   156→        .replace(".", ""),
+   157→    });
+   158→  }
+   159→  return out;
+   160→}
+   161→
+   162→function slugify(name: string): string {
+   163→  return name
+   164→    .toLowerCase()
+   165→    .normalize("NFD")
+   166→    .replace(/[\u0300-\u036f]/g, "")
+   167→    .replace(/[^a-z0-9]+/g, "-")
+   168→    .replace(/(^-|-$)/g, "");
+   169→}
+   170→
+   171→function StatusBadge({ status }: { status: OrderStatus }) {
+   172→  return (
+   173→    <Badge
+   174→      variant="outline"
+   175→      className={`rounded-md border text-xs font-bold ${STATUS_BADGE[status]}`}
+   176→    >
+   177→      {ORDER_STATUS_LABELS[status]}
+   178→    </Badge>
+   179→  );
+   180→}
+   181→
+   182→/* ————— Vue racine ————— */
+   183→
+   184→export function AdminView() {
+   185→  const adminLoggedIn = useShop((s) => s.adminLoggedIn);
+   186→
+   187→  // Thème sombre le temps de la visite admin (retiré à la sortie).
+   188→  useEffect(() => {
+   189→    document.documentElement.classList.add("dark");
+   190→    return () => document.documentElement.classList.remove("dark");
+   191→  }, []);
+   192→
+   193→  if (!adminLoggedIn) return <AdminLogin />;
+   194→  return <AdminDashboard />;
+   195→}
+   196→
+   197→/* ————— Connexion administrateur ————— */
+   198→
+   199→function AdminLogin() {
+   200→  const adminLogin = useShop((s) => s.adminLogin);
+   201→  const [password, setPassword] = useState("");
+   202→  const [show, setShow] = useState(false);
+   203→
+   204→  const submit = (e: React.FormEvent) => {
+   205→    e.preventDefault();
+   206→    if (adminLogin(password)) {
+   207→      toast({
+   208→        title: "Bienvenue",
+   209→        description: "Session administrateur ouverte.",
+   210→      });
+   211→    } else {
+   212→      toast({
+   213→        title: "Mot de passe incorrect",
+   214→        description: "Réessayez — démo : cauris2026",
+   215→        variant: "destructive",
+   216→      });
+   217→    }
+   218→  };
+   219→
+   220→  return (
+   221→    <div className="dark flex min-h-screen items-center justify-center bg-[#0b0b0b] px-4">
+   222→      <div className="w-full max-w-sm rounded-md border border-[#2a2a2a] bg-[#161616] p-7 shadow-xl">
+   223→        <div className="flex flex-col items-center text-center">
+   224→          <span className="flex h-14 w-14 items-center justify-center rounded-md bg-[#d4af37]">
+   225→            <Shell className="h-7 w-7 text-[#0b0b0b]" aria-hidden="true" />
+   226→          </span>
+   227→          <h1 className="mt-4 text-xl font-extrabold text-[#f5f2e9]">
+   228→            Espace administrateur
+   229→          </h1>
+   230→          <p className="mt-1 text-sm text-[#a3a3a3]">
+   231→            Maison Cauris — suivi du site
+   232→          </p>
+   233→        </div>
+   234→
+   235→        <form onSubmit={submit} className="mt-6 grid gap-3">
+   236→          <div className="grid gap-2">
+   237→            <Label htmlFor="admin-pass" className="text-[#f5f2e9]">
+   238→              Mot de passe
+   239→            </Label>
+   240→            <div className="relative">
+   241→              <Input
+   242→                id="admin-pass"
+   243→                type={show ? "text" : "password"}
+   244→                value={password}
+   245→                onChange={(e) => setPassword(e.target.value)}
+   246→                autoComplete="current-password"
+   247→                autoFocus
+   248→                className="h-11 rounded-md border-[#2a2a2a] bg-[#0b0b0b] pr-11 text-[#f5f2e9]"
+   249→              />
+   250→              <button
+   251→                type="button"
+   252→                aria-label={show ? "Masquer" : "Afficher"}
+   253→                onClick={() => setShow((v) => !v)}
+   254→                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a3a3a3] hover:text-white"
+   255→              >
+   256→                <KeyRound className="h-4 w-4" aria-hidden="true" />
+   257→              </button>
+   258→            </div>
+   259→          </div>
+   260→          <Button
+   261→            type="submit"
+   262→            className="h-11 rounded-md bg-[#d4af37] font-extrabold text-[#0b0b0b] hover:bg-[#bfa032]"
+   263→          >
+   264→            Ouvrir la session
+   265→          </Button>
+   266→        </form>
+   267→
+   268→        <p className="mt-4 rounded-md border border-[#2a2a2a] bg-[#0b0b0b] p-3 text-center text-xs text-[#a3a3a3]">
+   269→          Démo — mot de passe :{" "}
+   270→          <span className="font-bold text-[#d4af37]">{ADMIN_PASSWORD}</span>
+   271→        </p>
+   272→
+   273→        <a
+   274→          href="/"
+   275→          className="mt-4 inline-flex w-full items-center justify-center gap-2 text-sm font-bold text-[#a3a3a3] hover:text-white"
+   276→        >
+   277→          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+   278→          Retour au site
+   279→        </a>
+   280→      </div>
+   281→    </div>
+   282→  );
+   283→}
+   284→
+   285→/* ————— Tableau de bord (layout + navigation) ————— */
+   286→
+   287→function AdminDashboard() {
+   288→  const [tab, setTab] = useState<AdminTab>("dashboard");
+   289→  const adminLogout = useShop((s) => s.adminLogout);
+   290→
+   291→  return (
+   292→    <div className="dark min-h-screen bg-[#0b0b0b] text-[#f5f2e9]">
+   293→      {/* Barre supérieure */}
+   294→      <header className="sticky top-0 z-30 border-b border-[#2a2a2a] bg-[#111111]/95 backdrop-blur">
+   295→        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
+   296→          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#d4af37]">
+   297→            <Shell className="h-5 w-5 text-[#0b0b0b]" aria-hidden="true" />
+   298→          </span>
+   299→          <div className="leading-tight">
+   300→            <p className="text-base font-extrabold">Maison Cauris</p>
+   301→            <p className="text-xs font-semibold text-[#d4af37]">
+   302→              Administration
+   303→            </p>
+   304→          </div>
+   305→          <div className="ml-auto flex items-center gap-2">
+   306→            <Button
+   307→              asChild
+   308→              variant="outline"
+   309→              size="sm"
+   310→              className="rounded-md border-[#2a2a2a] bg-transparent font-bold text-[#f5f2e9] hover:bg-[#1e1e1e] hover:text-white"
+   311→            >
+   312→              <a href="/">
+   313→                <Store className="h-4 w-4" aria-hidden="true" />
+   314→                <span className="hidden sm:inline">Voir le site</span>
+   315→              </a>
+   316→            </Button>
+   317→            <Button
+   318→              variant="ghost"
+   319→              size="sm"
+   320→              className="rounded-md font-bold text-[#a3a3a3] hover:bg-[#1e1e1e] hover:text-white"
+   321→              onClick={() => {
+   322→                adminLogout();
+   323→                toast({ title: "Session fermée" });
+   324→              }}
+   325→            >
+   326→              <LogOut className="h-4 w-4" aria-hidden="true" />
+   327→              <span className="hidden sm:inline">Quitter</span>
+   328→            </Button>
+   329→          </div>
+   330→        </div>
+   331→      </header>
+   332→
+   333→      <div className="mx-auto flex max-w-7xl gap-6 px-4 py-6">
+   334→        {/* Navigation latérale (desktop) */}
+   335→        <aside className="hidden w-56 shrink-0 md:block">
+   336→          <nav aria-label="Sections admin" className="sticky top-20 grid gap-1">
+   337→            {TABS.map((t) => {
+   338→              const active = tab === t.id;
+   339→              return (
+   340→                <button
+   341→                  key={t.id}
+   342→                  type="button"
+   343→                  onClick={() => setTab(t.id)}
+   344→                  aria-current={active ? "page" : undefined}
+   345→                  className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-bold transition-colors ${
+   346→                    active
+   347→                      ? "bg-[#d4af37] text-[#0b0b0b]"
+   348→                      : "text-[#c9c9c9] hover:bg-[#161616] hover:text-white"
+   349→                  }`}
+   350→                >
+   351→                  <t.icon className="h-4.5 w-4.5" aria-hidden="true" />
+   352→                  {t.label}
+   353→                </button>
+   354→              );
+   355→            })}
+   356→          </nav>
+   357→        </aside>
+   358→
+   359→        <div className="min-w-0 flex-1">
+   360→          {/* Navigation chips (mobile) */}
+   361→          <nav
+   362→            aria-label="Sections admin"
+   363→            className="nice-scroll -mx-4 mb-5 flex gap-2 overflow-x-auto px-4 pb-1 md:hidden"
+   364→          >
+   365→            {TABS.map((t) => {
+   366→              const active = tab === t.id;
+   367→              return (
+   368→                <button
+   369→                  key={t.id}
+   370→                  type="button"
+   371→                  onClick={() => setTab(t.id)}
+   372→                  aria-current={active ? "page" : undefined}
+   373→                  className={`inline-flex shrink-0 items-center gap-2 rounded-md px-3.5 py-2 text-sm font-bold transition-colors ${
+   374→                    active
+   375→                      ? "bg-[#d4af37] text-[#0b0b0b]"
+   376→                      : "border border-[#2a2a2a] bg-[#161616] text-[#c9c9c9]"
+   377→                  }`}
+   378→                >
+   379→                  <t.icon className="h-4 w-4" aria-hidden="true" />
+   380→                  {t.label}
+   381→                </button>
+   382→              );
+   383→            })}
+   384→          </nav>
+   385→
+   386→          <main>
+   387→            {tab === "dashboard" && (
+   388→              <DashboardTab onGoProducts={() => setTab("products")} />
+   389→            )}
+   390→            {tab === "orders" && <OrdersTab />}
+   391→            {tab === "clients" && <ClientsTab />}
+   392→            {tab === "products" && <ProductsTab />}
+   393→            {tab === "settings" && <SettingsTab />}
+   394→          </main>
+   395→        </div>
+   396→      </div>
+   397→    </div>
+   398→  );
+   399→}
+   400→
+   401→/* ————— Onglet : tableau de bord ————— */
+   402→
+   403→function Kpi({
+   404→  icon: Icon,
+   405→  label,
+   406→  value,
+   407→  hint,
+   408→  tone = "gold",
+   409→}: {
+   410→  icon: typeof Banknote;
+   411→  label: string;
+   412→  value: string;
+   413→  hint?: string;
+   414→  tone?: "gold" | "neutral" | "alert";
+   415→}) {
+   416→  const tones = {
+   417→    gold: "bg-[#d4af37]/10 text-[#d4af37]",
+   418→    neutral: "bg-[#161616] text-[#a3a3a3]",
+   419→    alert: "bg-[#f87171]/10 text-[#fca5a5]",
+   420→  } as const;
+   421→  return (
+   422→    <div className="rounded-md border border-[#2a2a2a] bg-[#161616] p-4">
+   423→      <div className="flex items-center gap-2.5">
+   424→        <span
+   425→          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${tones[tone]}`}
+   426→        >
+   427→          <Icon className="h-4.5 w-4.5" aria-hidden="true" />
+   428→        </span>
+   429→        <p className="text-xs font-bold uppercase tracking-wide text-[#a3a3a3]">
+   430→          {label}
+   431→        </p>
+   432→      </div>
+   433→      <p className="mt-2.5 text-2xl font-extrabold text-[#f5f2e9]">{value}</p>
+   434→      {hint && <p className="mt-0.5 text-xs text-[#a3a3a3]">{hint}</p>}
+   435→    </div>
+   436→  );
+   437→}
+   438→
+   439→function DashboardTab({ onGoProducts }: { onGoProducts: () => void }) {
+   440→  const adminOrders = useShop((s) => s.adminOrders);
+   441→  const clients = useShop((s) => s.clients);
+   442→  const products = useShop((s) => s.products);
+   443→  const stock = useShop((s) => s.stock);
+   444→
+   445→  const active = adminOrders.filter((o) => statusOf(o) !== "annulee");
+   446→  const revenue = active.reduce((sum, o) => sum + o.total, 0);
+   447→  const avg = active.length ? Math.round(revenue / active.length) : 0;
+   448→  const pendingCount = adminOrders.filter(
+   449→    (o) => statusOf(o) === "en_attente"
+   450→  ).length;
+   451→  const lowStock = products.filter((p) => (stock[p.id] ?? 0) <= 3);
+   452→
+   453→  // Chiffre d'affaires des 7 derniers jours (barres CSS, sans librairie).
+   454→  const days = computeLast7Days(adminOrders);
+   455→
+   456→  const maxDay = Math.max(...days.map((d) => d.total), 1);
+   457→  const recent = adminOrders.slice(0, 5);
+   458→
+   459→  return (
+   460→    <div className="grid gap-5">
+   461→      <div>
+   462→        <h1 className="text-xl font-extrabold sm:text-2xl">Tableau de bord</h1>
+   463→        <p className="mt-1 text-sm text-[#a3a3a3]">
+   464→          Vue d&apos;ensemble de la boutique — mise à jour en direct.
+   465→        </p>
+   466→      </div>
+   467→
+   468→      {/* Indicateurs clés */}
+   469→      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+   470→        <Kpi
+   471→          icon={Banknote}
+   472→          label="Chiffre d'affaires"
+   473→          value={formatFCFA(revenue)}
+   474→          hint={`${active.length} commande(s) valide(s)`}
+   475→        />
+   476→        <Kpi
+   477→          icon={ShoppingBag}
+   478→          label="Commandes"
+   479→          value={String(adminOrders.length)}
+   480→          hint={`${pendingCount} en attente de confirmation`}
+   481→        />
+   482→        <Kpi
+   483→          icon={UsersRound}
+   484→          label="Comptes clients"
+   485→          value={String(clients.length)}
+   486→          hint={`${clients.filter((c) => c.pinSet).length} avec code PIN`}
+   487→        />
+   488→        <Kpi icon={TrendingUp} label="Panier moyen" value={formatFCFA(avg)} />
+   489→        <Kpi
+   490→          icon={Boxes}
+   491→          label="Produits au catalogue"
+   492→          value={String(products.length)}
+   493→        />
+   494→        <Kpi
+   495→          icon={AlertTriangle}
+   496→          label="Stock faible"
+   497→          value={String(lowStock.length)}
+   498→          hint="Produits à réapprovisionner (≤ 3)"
+   499→          tone={lowStock.length ? "alert" : "neutral"}
+   500→        />
+   501→      </div>
+   502→
+   503→      <div className="grid gap-5 lg:grid-cols-5">
+   504→        {/* Graphique 7 jours */}
+   505→        <section
+   506→          aria-label="Chiffre d'affaires des 7 derniers jours"
+   507→          className="rounded-md border border-[#2a2a2a] bg-[#161616] p-5 lg:col-span-3"
+   508→        >
+   509→          <h2 className="text-sm font-extrabold uppercase tracking-wide text-[#a3a3a3]">
+   510→            CA — 7 derniers jours
+   511→          </h2>
+   512→          <div className="mt-4 grid h-44 grid-cols-7 items-end gap-2 sm:gap-3">
+   513→            {days.map((d) => (
+   514→              <div
+   515→                key={d.key}
+   516→                className="flex h-full flex-col items-center justify-end gap-1.5"
+   517→              >
+   518→                <span className="text-[10px] font-bold text-[#a3a3a3]">
+   519→                  {d.total > 0 ? `${Math.round(d.total / 1000)}k` : ""}
+   520→                </span>
+   521→                <div
+   522→                  className={`w-full rounded-sm ${
+   523→                    d.total > 0 ? "bg-[#d4af37]" : "bg-[#2a2a2a]"
+   524→                  }`}
+   525→                  style={{
+   526→                    height: `${Math.max(4, (d.total / maxDay) * 100)}%`,
+   527→                  }}
+   528→                  title={formatFCFA(d.total)}
+   529→                />
+   530→                <span className="text-xs font-bold capitalize text-[#c9c9c9]">
+   531→                  {d.label}
+   532→                </span>
+   533→              </div>
+   534→            ))}
+   535→          </div>
+   536→        </section>
+   537→
+   538→        {/* Alertes stock */}
+   539→        <section
+   540→          aria-label="Alertes de stock"
+   541→          className="rounded-md border border-[#2a2a2a] bg-[#161616] p-5 lg:col-span-2"
+   542→        >
+   543→          <h2 className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide text-[#a3a3a3]">
+   544→            <AlertTriangle
+   545→              className="h-4 w-4 text-[#fca5a5]"
+   546→              aria-hidden="true"
+   547→            />
+   548→            Stocks faibles
+   549→          </h2>
+   550→          {lowStock.length === 0 ? (
+   551→            <p className="mt-4 text-sm text-[#a3a3a3]">
+   552→              Aucun produit sous le seuil. Tout va bien !
+   553→            </p>
+   554→          ) : (
+   555→            <ul className="mt-4 grid gap-2.5">
+   556→              {lowStock.slice(0, 5).map((p) => (
+   557→                <li
+   558→                  key={p.id}
+   559→                  className="flex items-center justify-between gap-3 rounded-md border border-[#2a2a2a] bg-[#0b0b0b] px-3 py-2.5"
+   560→                >
+   561→                  <span className="min-w-0 flex-1 truncate text-sm font-bold">
+   562→                    {p.name}
+   563→                  </span>
+   564→                  <Badge
+   565→                    variant="outline"
+   566→                    className="shrink-0 rounded-md border-[#f87171]/40 bg-[#f87171]/10 text-[#fca5a5]"
+   567→                  >
+   568→                    {stock[p.id] ?? 0} en stock
+   569→                  </Badge>
+   570→                </li>
+   571→              ))}
+   572→            </ul>
+   573→          )}
+   574→          <Button
+   575→            size="sm"
+   576→            variant="outline"
+   577→            className="mt-4 rounded-md border-[#d4af37]/50 bg-transparent font-bold text-[#d4af37] hover:bg-[#d4af37]/10"
+   578→            onClick={onGoProducts}
+   579→          >
+   580→            Gérer les produits
+   581→          </Button>
+   582→        </section>
+   583→      </div>
+   584→
+   585→      {/* Dernières commandes */}
+   586→      <section
+   587→        aria-label="Dernières commandes"
+   588→        className="rounded-md border border-[#2a2a2a] bg-[#161616] p-5"
+   589→      >
+   590→        <h2 className="text-sm font-extrabold uppercase tracking-wide text-[#a3a3a3]">
+   591→          Dernières commandes
+   592→        </h2>
+   593→        <ul className="mt-4 grid gap-2.5">
+   594→          {recent.map((o) => (
+   595→            <li
+   596→              key={o.id}
+   597→              className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-md border border-[#2a2a2a] bg-[#0b0b0b] px-4 py-3"
+   598→            >
+   599→              <span className="font-extrabold text-[#d4af37]">{o.id}</span>
+   600→              <span className="min-w-0 flex-1 truncate text-sm font-bold">
+   601→                {o.name}
+   602→              </span>
+   603→              <span className="text-xs text-[#a3a3a3]">
+   604→                {relDate(o.createdAt)}
+   605→              </span>
+   606→              <span className="text-sm font-extrabold">
+   607→                {formatFCFA(o.total)}
+   608→              </span>
+   609→              <StatusBadge status={statusOf(o)} />
+   610→            </li>
+   611→          ))}
+   612→        </ul>
+   613→      </section>
+   614→    </div>
+   615→  );
+   616→}
+   617→
+   618→/* ————— Onglet : commandes ————— */
+   619→
+   620→function OrdersTab() {
+   621→  const adminOrders = useShop((s) => s.adminOrders);
+   622→  const setOrderStatus = useShop((s) => s.setOrderStatus);
+   623→
+   624→  const [query, setQuery] = useState("");
+   625→  const [filter, setFilter] = useState<"all" | OrderStatus>("all");
+   626→  const [openId, setOpenId] = useState<string | null>(null);
+   627→
+   628→  const list = useMemo(() => {
+   629→    const q = query.trim().toLowerCase();
+   630→    return adminOrders.filter((o) => {
+   631→      if (filter !== "all" && statusOf(o) !== filter) return false;
+   632→      if (!q) return true;
+   633→      return (
+   634→        o.id.toLowerCase().includes(q) ||
+   635→        o.name.toLowerCase().includes(q) ||
+   636→        o.phone.replace(/\s/g, "").includes(q.replace(/\s/g, ""))
+   637→      );
+   638→    });
+   639→  }, [adminOrders, query, filter]);
+   640→
+   641→  const selectCls =
+   642→    "rounded-md border-[#2a2a2a] bg-[#161616] text-[#f5f2e9]";
+   643→
+   644→  return (
+   645→    <div className="grid gap-5">
+   646→      <div className="flex flex-wrap items-end justify-between gap-3">
+   647→        <div>
+   648→          <h1 className="text-xl font-extrabold sm:text-2xl">Commandes</h1>
+   649→          <p className="mt-1 text-sm text-[#a3a3a3]">
+   650→            {adminOrders.length} commande(s) — suivez et mettez à jour les
+   651→            statuts.
+   652→          </p>
+   653→        </div>
+   654→        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+   655→          <div className="relative sm:w-64">
+   656→            <Search
+   657→              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6c6c6c]"
+   658→              aria-hidden="true"
+   659→            />
+   660→            <Input
+   661→              type="search"
+   662→              value={query}
+   663→              onChange={(e) => setQuery(e.target.value)}
+   664→              placeholder="N°, client, téléphone…"
+   665→              aria-label="Rechercher une commande"
+   666→              className="h-10 rounded-md border-[#2a2a2a] bg-[#161616] pl-9 text-[#f5f2e9]"
+   667→            />
+   668→          </div>
+   669→          <Select
+   670→            value={filter}
+   671→            onValueChange={(v) => setFilter(v as typeof filter)}
+   672→          >
+   673→            <SelectTrigger
+   674→              className={`h-10 w-full sm:w-44 ${selectCls}`}
+   675→              aria-label="Filtrer par statut"
+   676→            >
+   677→              <SelectValue />
+   678→            </SelectTrigger>
+   679→            <SelectContent className={selectCls}>
+   680→              <SelectItem value="all">Tous les statuts</SelectItem>
+   681→              {(Object.keys(ORDER_STATUS_LABELS) as OrderStatus[]).map((s) => (
+   682→                <SelectItem key={s} value={s}>
+   683→                  {ORDER_STATUS_LABELS[s]}
+   684→                </SelectItem>
+   685→              ))}
+   686→            </SelectContent>
+   687→          </Select>
+   688→        </div>
+   689→      </div>
+   690→
+   691→      {list.length === 0 ? (
+   692→        <div className="rounded-md border border-dashed border-[#2a2a2a] py-14 text-center text-sm text-[#a3a3a3]">
+   693→          Aucune commande ne correspond.
+   694→        </div>
+   695→      ) : (
+   696→        <ul className="grid gap-2.5">
+   697→          {list.map((o) => {
+   698→            const open = openId === o.id;
+   699→            return (
+   700→              <li
+   701→                key={o.id}
+   702→                className="rounded-md border border-[#2a2a2a] bg-[#161616]"
+   703→              >
+   704→                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 p-4">
+   705→                  <button
+   706→                    type="button"
+   707→                    onClick={() => setOpenId(open ? null : o.id)}
+   708→                    aria-expanded={open}
+   709→                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+   710→                  >
+   711→                    <ChevronDown
+   712→                      className={`h-4 w-4 shrink-0 text-[#a3a3a3] transition-transform ${
+   713→                        open ? "rotate-180" : ""
+   714→                      }`}
+   715→                      aria-hidden="true"
+   716→                    />
+   717→                    <span className="font-extrabold text-[#d4af37]">
+   718→                      {o.id}
+   719→                    </span>
+   720→                    <span className="hidden text-xs text-[#a3a3a3] sm:inline">
+   721→                      {fmtDateTime(o.createdAt)}
+   722→                    </span>
+   723→                    <span className="min-w-0 flex-1 truncate text-sm font-bold">
+   724→                      {o.name}
+   725→                    </span>
+   726→                  </button>
+   727→                  <span className="text-sm font-extrabold">
+   728→                    {formatFCFA(o.total)}
+   729→                  </span>
+   730→                  <StatusBadge status={statusOf(o)} />
+   731→                  <Select
+   732→                    value={statusOf(o)}
+   733→                    onValueChange={(v) => {
+   734→                      setOrderStatus(o.id, v as OrderStatus);
+   735→                      toast({
+   736→                        title: `Commande ${o.id}`,
+   737→                        description: `Statut : ${
+   738→                          ORDER_STATUS_LABELS[v as OrderStatus]
+   739→                        }`,
+   740→                      });
+   741→                    }}
+   742→                  >
+   743→                    <SelectTrigger
+   744→                      className="h-9 w-[150px] rounded-md border-[#2a2a2a] bg-[#0b0b0b] text-xs font-bold text-[#f5f2e9]"
+   745→                      aria-label={`Changer le statut de ${o.id}`}
+   746→                    >
+   747→                      <SelectValue />
+   748→                    </SelectTrigger>
+   749→                    <SelectContent className={selectCls}>
+   750→                      {(Object.keys(ORDER_STATUS_LABELS) as OrderStatus[]).map(
+   751→                        (s) => (
+   752→                          <SelectItem key={s} value={s}>
+   753→                            {ORDER_STATUS_LABELS[s]}
+   754→                          </SelectItem>
+   755→                        )
+   756→                      )}
+   757→                    </SelectContent>
+   758→                  </Select>
+   759→                </div>
+   760→
+   761→                {open && (
+   762→                  <div className="border-t border-[#2a2a2a] px-4 py-4">
+   763→                    <div className="grid gap-4 md:grid-cols-2">
+   764→                      <div>
+   765→                        <p className="text-xs font-bold uppercase tracking-wide text-[#a3a3a3]">
+   766→                          Articles
+   767→                        </p>
+   768→                        <ul className="mt-2 grid gap-1.5">
+   769→                          {o.lines.map((l) => (
+   770→                            <li
+   771→                              key={l.productId}
+   772→                              className="flex items-center justify-between gap-3 text-sm"
+   773→                            >
+   774→                              <span className="min-w-0 truncate">
+   775→                                {l.qty} × {l.name}
+   776→                              </span>
+   777→                              <span className="shrink-0 font-bold text-[#c9c9c9]">
+   778→                                {formatFCFA(l.price * l.qty)}
+   779→                              </span>
+   780→                            </li>
+   781→                          ))}
+   782→                        </ul>
+   783→                      </div>
+   784→                      <div className="grid gap-1.5 text-sm">
+   785→                        <p className="text-xs font-bold uppercase tracking-wide text-[#a3a3a3]">
+   786→                          Client &amp; livraison
+   787→                        </p>
+   788→                        <p className="text-[#c9c9c9]">
+   789→                          <span className="text-[#a3a3a3]">Tél :</span>{" "}
+   790→                          <span className="font-bold text-[#f5f2e9]">
+   791→                            {o.phone}
+   792→                          </span>
+   793→                        </p>
+   794→                        {o.email && (
+   795→                          <p className="truncate text-[#c9c9c9]">
+   796→                            <span className="text-[#a3a3a3]">Email :</span>{" "}
+   797→                            {o.email}
+   798→                          </p>
+   799→                        )}
+   800→                        <p className="text-[#c9c9c9]">
+   801→                          <span className="text-[#a3a3a3]">Adresse :</span>{" "}
+   802→                          {o.address}, {o.city}
+   803→                        </p>
+   804→                        <p className="text-[#c9c9c9]">
+   805→                          <span className="text-[#a3a3a3]">Paiement :</span>{" "}
+   806→                          {o.paymentLabel}
+   807→                        </p>
+   808→                        {o.rewardUsed && (
+   809→                          <p className="text-[#c9c9c9]">
+   810→                            <span className="text-[#a3a3a3]">Fidélité :</span>{" "}
+   811→                            {o.rewardUsed.label} (−{o.rewardUsed.cost} pts) · +
+   812→                            {o.pointsEarned} pts gagnés
+   813→                          </p>
+   814→                        )}
+   815→                      </div>
+   816→                    </div>
+   817→                    <Separator className="my-3 bg-[#2a2a2a]" />
+   818→                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+   819→                      <span className="text-[#a3a3a3]">
+   820→                        Sous-total {formatFCFA(o.subtotal)} · Livraison{" "}
+   821→                        {formatFCFA(o.shipping)}
+   822→                        {o.discount > 0 &&
+   823→                          ` · Réduction −${formatFCFA(o.discount)}`}
+   824→                      </span>
+   825→                      <span className="font-extrabold text-[#d4af37]">
+   826→                        Total {formatFCFA(o.total)}
+   827→                      </span>
+   828→                    </div>
+   829→                  </div>
+   830→                )}
+   831→              </li>
+   832→            );
+   833→          })}
+   834→        </ul>
+   835→      )}
+   836→    </div>
+   837→  );
+   838→}
+   839→
+   840→/* ————— Onglet : comptes clients ————— */
+   841→
+   842→function ClientsTab() {
+   843→  const clients = useShop((s) => s.clients);
+   844→  const [query, setQuery] = useState("");
+   845→
+   846→  const list = useMemo(() => {
+   847→    const q = query.trim().toLowerCase();
+   848→    const filtered = q
+   849→      ? clients.filter(
+   850→          (c) =>
+   851→            c.name.toLowerCase().includes(q) ||
+   852→            c.phone.replace(/\s/g, "").includes(q.replace(/\s/g, "")) ||
+   853→            (c.email ?? "").toLowerCase().includes(q)
+   854→        )
+   855→      : clients;
+   856→    return [...filtered].sort((a, b) => b.totalSpent - a.totalSpent);
+   857→  }, [clients, query]);
+   858→
+   859→  return (
+   860→    <div className="grid gap-5">
+   861→      <div className="flex flex-wrap items-end justify-between gap-3">
+   862→        <div>
+   863→          <h1 className="text-xl font-extrabold sm:text-2xl">
+   864→            Comptes clients
+   865→          </h1>
+   866→          <p className="mt-1 text-sm text-[#a3a3a3]">
+   867→            {clients.length} compte(s) — créés automatiquement à la première
+   868→            commande.
+   869→          </p>
+   870→        </div>
+   871→        <div className="relative w-full sm:w-72">
+   872→          <Search
+   873→            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6c6c6c]"
+   874→            aria-hidden="true"
+   875→          />
+   876→          <Input
+   877→            type="search"
+   878→            value={query}
+   879→            onChange={(e) => setQuery(e.target.value)}
+   880→            placeholder="Nom, téléphone, email…"
+   881→            aria-label="Rechercher un client"
+   882→            className="h-10 rounded-md border-[#2a2a2a] bg-[#161616] pl-9 text-[#f5f2e9]"
+   883→          />
+   884→        </div>
+   885→      </div>
+   886→
+   887→      {list.length === 0 ? (
+   888→        <div className="rounded-md border border-dashed border-[#2a2a2a] py-14 text-center text-sm text-[#a3a3a3]">
+   889→          Aucun client ne correspond.
+   890→        </div>
+   891→      ) : (
+   892→        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+   893→          {list.map((c) => (
+   894→            <ClientCard key={c.id} client={c} />
+   895→          ))}
+   896→        </div>
+   897→      )}
+   898→    </div>
+   899→  );
+   900→}
+   901→
+   902→function ClientCard({ client: c }: { client: ClientAccount }) {
+   903→  const tier = tierFor(c.lifetimePoints);
+   904→  return (
+   905→    <div className="rounded-md border border-[#2a2a2a] bg-[#161616] p-4">
+   906→      <div className="flex items-start justify-between gap-3">
+   907→        <div className="flex items-center gap-3">
+   908→          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#d4af37] text-base font-extrabold text-[#0b0b0b]">
+   909→            {c.name.trim().charAt(0).toUpperCase()}
+   910→          </span>
+   911→          <div className="min-w-0">
+   912→            <p className="truncate font-extrabold">{c.name}</p>
+   913→            <p className="truncate text-xs text-[#a3a3a3]">{c.city}</p>
+   914→          </div>
+   915→        </div>
+   916→        <Badge
+   917→          variant="outline"
+   918→          className="shrink-0 rounded-md border-[#d4af37]/40 bg-[#d4af37]/10 text-[#d4af37]"
+   919→        >
+   920→          {tier.name}
+   921→        </Badge>
+   922→      </div>
+   923→
+   924→      <dl className="mt-3 grid gap-1.5 text-sm">
+   925→        <div className="flex justify-between gap-3">
+   926→          <dt className="text-[#a3a3a3]">Téléphone</dt>
+   927→          <dd className="font-bold">{c.phone}</dd>
+   928→        </div>
+   929→        {c.email && (
+   930→          <div className="flex justify-between gap-3">
+   931→            <dt className="text-[#a3a3a3]">Email</dt>
+   932→            <dd className="min-w-0 truncate font-bold">{c.email}</dd>
+   933→          </div>
+   934→        )}
+   935→        <div className="flex justify-between gap-3">
+   936→          <dt className="text-[#a3a3a3]">Commandes</dt>
+   937→          <dd className="font-bold">{c.ordersCount}</dd>
+   938→        </div>
+   939→        <div className="flex justify-between gap-3">
+   940→          <dt className="text-[#a3a3a3]">Total dépensé</dt>
+   941→          <dd className="font-bold text-[#d4af37]">
+   942→            {formatFCFA(c.totalSpent)}
+   943→          </dd>
+   944→        </div>
+   945→        <div className="flex justify-between gap-3">
+   946→          <dt className="flex items-center gap-1.5 text-[#a3a3a3]">
+   947→            <Gem className="h-3.5 w-3.5" aria-hidden="true" />
+   948→            Points
+   949→          </dt>
+   950→          <dd className="font-bold">
+   951→            {c.points} pts
+   952→            <span className="ml-1 text-xs font-normal text-[#a3a3a3]">
+   953→              ({c.lifetimePoints} à vie)
+   954→            </span>
+   955→          </dd>
+   956→        </div>
+   957→        <div className="flex items-center justify-between gap-3">
+   958→          <dt className="text-[#a3a3a3]">Connexion</dt>
+   959→          <dd>
+   960→            {c.pinSet ? (
+   961→              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#86efac]">
+   962→                <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+   963→                PIN défini
+   964→              </span>
+   965→            ) : (
+   966→              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#fca5a5]">
+   967→                <KeyRound className="h-3.5 w-3.5" aria-hidden="true" />
+   968→                PIN non défini
+   969→              </span>
+   970→            )}
+   971→          </dd>
+   972→        </div>
+   973→        <div className="flex justify-between gap-3">
+   974→          <dt className="text-[#a3a3a3]">Dernière commande</dt>
+   975→          <dd className="font-bold">
+   976→            {c.lastOrderAt ? relDate(c.lastOrderAt) : "—"}
+   977→          </dd>
+   978→        </div>
+   979→      </dl>
+   980→    </div>
+   981→  );
+   982→}
+   983→
+   984→/* ————— Onglet : produits ————— */
+   985→
+   986→function ProductsTab() {
+   987→  const products = useShop((s) => s.products);
+   988→  const stock = useShop((s) => s.stock);
+   989→  const setStock = useShop((s) => s.setStock);
+   990→  const deleteProduct = useShop((s) => s.deleteProduct);
+   991→  const updateProduct = useShop((s) => s.updateProduct);
+   992→
+   993→  const [dialogOpen, setDialogOpen] = useState(false);
+   994→  const [editing, setEditing] = useState<Product | null>(null);
+   995→  const [query, setQuery] = useState("");
+   996→
+   997→  const list = useMemo(() => {
+   998→    const q = query.trim().toLowerCase();
+   999→    return q
+  1000→      ? products.filter(
+  1001→          (p) =>
+  1002→            p.name.toLowerCase().includes(q) ||
+  1003→            p.brand.toLowerCase().includes(q)
+  1004→        )
+  1005→      : products;
+  1006→  }, [products, query]);
+  1007→
+  1008→  return (
+  1009→    <div className="grid gap-5">
+  1010→      <div className="flex flex-wrap items-end justify-between gap-3">
+  1011→        <div>
+  1012→          <h1 className="text-xl font-extrabold sm:text-2xl">Produits</h1>
+  1013→          <p className="mt-1 text-sm text-[#a3a3a3]">
+  1014→            {products.length} produit(s) — ajoutez, modifiez, ajustez les
+  1015→            stocks.
+  1016→          </p>
+  1017→        </div>
+  1018→        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+  1019→          <div className="relative sm:w-56">
+  1020→            <Search
+  1021→              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6c6c6c]"
+  1022→              aria-hidden="true"
+  1023→            />
+  1024→            <Input
+  1025→              type="search"
+  1026→              value={query}
+  1027→              onChange={(e) => setQuery(e.target.value)}
+  1028→              placeholder="Rechercher…"
+  1029→              aria-label="Rechercher un produit"
+  1030→              className="h-10 rounded-md border-[#2a2a2a] bg-[#161616] pl-9 text-[#f5f2e9]"
+  1031→            />
+  1032→          </div>
+  1033→          <Button
+  1034→            className="h-10 rounded-md bg-[#d4af37] font-extrabold text-[#0b0b0b] hover:bg-[#bfa032]"
+  1035→            onClick={() => {
+  1036→              setEditing(null);
+  1037→              setDialogOpen(true);
+  1038→            }}
+  1039→          >
+  1040→            <Plus className="h-4 w-4" aria-hidden="true" />
+  1041→            Nouveau produit
+  1042→          </Button>
+  1043→        </div>
+  1044→      </div>
+  1045→
+  1046→      <ul className="grid gap-2.5">
+  1047→        {list.map((p) => {
+  1048→          const qty = stock[p.id] ?? 0;
+  1049→          const low = qty <= 3;
+  1050→          return (
+  1051→            <li
+  1052→              key={p.id}
+  1053→              className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-md border border-[#2a2a2a] bg-[#161616] p-3 sm:p-4"
+  1054→            >
+  1055→              <SafeImg
+  1056→                src={imgFor(p.imageKeys[0])}
+  1057→                alt={p.name}
+  1058→                className="h-14 w-14 shrink-0 rounded-md object-cover"
+  1059→              />
+  1060→              <div className="min-w-0 flex-1 basis-48">
+  1061→                <p className="truncate font-bold">{p.name}</p>
+  1062→                <p className="mt-0.5 text-xs text-[#a3a3a3]">
+  1063→                  {CATEGORIES.find((c) => c.id === p.category)?.name ??
+  1064→                    p.category}{" "}
+  1065→                  · {p.brand}
+  1066→                </p>
+  1067→              </div>
+  1068→              <span className="font-extrabold text-[#d4af37]">
+  1069→                {formatFCFA(p.price)}
+  1070→              </span>
+  1071→
+  1072→              {/* Stock modifiable en un clin d'œil */}
+  1073→              <label className="flex items-center gap-2 text-xs text-[#a3a3a3]">
+  1074→                Stock
+  1075→                <Input
+  1076→                  type="number"
+  1077→                  min={0}
+  1078→                  value={qty}
+  1079→                  onChange={(e) =>
+  1080→                    setStock(p.id, Math.max(0, Number(e.target.value) || 0))
+  1081→                  }
+  1082→                  aria-label={`Stock de ${p.name}`}
+  1083→                  className={`h-9 w-20 rounded-md border-[#2a2a2a] bg-[#0b0b0b] text-center font-bold text-[#f5f2e9] ${
+  1084→                    low ? "border-[#f87171]/60 text-[#fca5a5]" : ""
+  1085→                  }`}
+  1086→                />
+  1087→              </label>
+  1088→
+  1089→              {/* Mise en avant */}
+  1090→              <label className="flex items-center gap-2 text-xs text-[#a3a3a3]">
+  1091→                Vedette
+  1092→                <Switch
+  1093→                  checked={p.featured ?? false}
+  1094→                  onCheckedChange={(v) => updateProduct(p.id, { featured: v })}
+  1095→                  aria-label={`Mettre ${p.name} en vedette`}
+  1096→                />
+  1097→              </label>
+  1098→
+  1099→              <div className="ml-auto flex items-center gap-1.5">
+  1100→                <Button
+  1101→                  size="icon"
+  1102→                  variant="ghost"
+  1103→                  aria-label={`Modifier ${p.name}`}
+  1104→                  className="h-9 w-9 rounded-md text-[#c9c9c9] hover:bg-[#1e1e1e] hover:text-white"
+  1105→                  onClick={() => {
+  1106→                    setEditing(p);
+  1107→                    setDialogOpen(true);
+  1108→                  }}
+  1109→                >
+  1110→                  <Pencil className="h-4 w-4" aria-hidden="true" />
+  1111→                </Button>
+  1112→                <AlertDialog>
+  1113→                  <AlertDialogTrigger asChild>
+  1114→                    <Button
+  1115→                      size="icon"
+  1116→                      variant="ghost"
+  1117→                      aria-label={`Supprimer ${p.name}`}
+  1118→                      className="h-9 w-9 rounded-md text-[#fca5a5] hover:bg-[#f87171]/10 hover:text-[#fca5a5]"
+  1119→                    >
+  1120→                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+  1121→                    </Button>
+  1122→                  </AlertDialogTrigger>
+  1123→                  <AlertDialogContent className="rounded-md border-[#2a2a2a] bg-[#161616]">
+  1124→                    <AlertDialogHeader>
+  1125→                      <AlertDialogTitle className="text-[#f5f2e9]">
+  1126→                        Supprimer ce produit ?
+  1127→                      </AlertDialogTitle>
+  1128→                      <AlertDialogDescription className="text-[#a3a3a3]">
+  1129→                        « {p.name} » disparaîtra du catalogue et des paniers.
+  1130→                      </AlertDialogDescription>
+  1131→                    </AlertDialogHeader>
+  1132→                    <AlertDialogFooter>
+  1133→                      <AlertDialogCancel className="rounded-md border-[#2a2a2a] bg-transparent text-[#f5f2e9] hover:bg-[#1e1e1e]">
+  1134→                        Annuler
+  1135→                      </AlertDialogCancel>
+  1136→                      <AlertDialogAction
+  1137→                        className="rounded-md bg-[#f87171] font-bold text-[#0b0b0b] hover:bg-[#ef4444]"
+  1138→                        onClick={() => {
+  1139→                          deleteProduct(p.id);
+  1140→                          toast({ title: "Produit supprimé", description: p.name });
+  1141→                        }}
+  1142→                      >
+  1143→                        Supprimer
+  1144→                      </AlertDialogAction>
+  1145→                    </AlertDialogFooter>
+  1146→                  </AlertDialogContent>
+  1147→                </AlertDialog>
+  1148→              </div>
+  1149→            </li>
+  1150→          );
+  1151→        })}
+  1152→      </ul>
+  1153→
+  1154→      <ProductDialog
+  1155→        open={dialogOpen}
+  1156→        product={editing}
+  1157→        onClose={() => setDialogOpen(false)}
+  1158→      />
+  1159→    </div>
+  1160→  );
+  1161→}
+  1162→
+  1163→/* ————— Formulaire produit (création / édition) ————— */
+  1164→
+  1165→interface ProductForm {
+  1166→  name: string;
+  1167→  brand: string;
+  1168→  category: CategoryId;
+  1169→  price: string;
+  1170→  oldPrice: string;
+  1171→  availability: "in_stock" | "on_order";
+  1172→  leadTimeDays: string;
+  1173→  stockQty: string;
+  1174→  warrantyMonths: string;
+  1175→  shortDescription: string;
+  1176→  description: string;
+  1177→  featuresText: string;
+  1178→  practicalText: string;
+  1179→  featured: boolean;
+  1180→  imageKey: string;
+  1181→  source: string;
+  1182→}
+  1183→
+  1184→const EMPTY_FORM: ProductForm = {
+  1185→  name: "",
+  1186→  brand: "Générique",
+  1187→  category: "cuisine",
+  1188→  price: "",
+  1189→  oldPrice: "",
+  1190→  availability: "in_stock",
+  1191→  leadTimeDays: "3",
+  1192→  stockQty: "10",
+  1193→  warrantyMonths: "6",
+  1194→  shortDescription: "",
+  1195→  description: "",
+  1196→  featuresText: "",
+  1197→  practicalText: "",
+  1198→  featured: false,
+  1199→  imageKey: "none",
+  1200→  source: "Ajouté via l'admin",
+  1201→};
+  1202→
+  1203→const IMAGE_KEYS = Object.keys(IMG).filter((k) => k.startsWith("p_"));
+  1204→
+  1205→function ProductDialog({
+  1206→  open,
+  1207→  product,
+  1208→  onClose,
+  1209→}: {
+  1210→  open: boolean;
+  1211→  product: Product | null;
+  1212→  onClose: () => void;
+  1213→}) {
+  1214→  const addProduct = useShop((s) => s.addProduct);
+  1215→  const updateProduct = useShop((s) => s.updateProduct);
+  1216→  const setStock = useShop((s) => s.setStock);
+  1217→  const stock = useShop((s) => s.stock);
+  1218→
+  1219→  const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
+  1220→  const [loadedId, setLoadedId] = useState<string | null>(null);
+  1221→
+  1222→  // Pré-remplit le formulaire quand on ouvre en mode édition.
+  1223→  if (open && product && loadedId !== product.id) {
+  1224→    setLoadedId(product.id);
+  1225→    setForm({
+  1226→      name: product.name,
+  1227→      brand: product.brand,
+  1228→      category: product.category,
+  1229→      price: String(product.price),
+  1230→      oldPrice: product.oldPrice ? String(product.oldPrice) : "",
+  1231→      availability: product.availability,
+  1232→      leadTimeDays: product.leadTimeDays ? String(product.leadTimeDays) : "3",
+  1233→      stockQty: String(stock[product.id] ?? 0),
+  1234→      warrantyMonths: product.warrantyMonths
+  1235→        ? String(product.warrantyMonths)
+  1236→        : "",
+  1237→      shortDescription: product.shortDescription,
+  1238→      description: product.description,
+  1239→      featuresText: product.features.join("\n"),
+  1240→      practicalText: product.practical
+  1241→        .filter((l) => !/^Garantie boutique/i.test(l))
+  1242→        .join("\n"),
+  1243→      featured: product.featured ?? false,
+  1244→      imageKey: product.imageKeys[0] ?? "none",
+  1245→      source: product.source,
+  1246→    });
+  1247→  }
+  1248→
+  1249→  const set = (patch: Partial<ProductForm>) =>
+  1250→    setForm((f) => ({ ...f, ...patch }));
+  1251→
+  1252→  const submit = (e: React.FormEvent) => {
+  1253→    e.preventDefault();
+  1254→    const name = form.name.trim();
+  1255→    const price = Number(form.price);
+  1256→    if (!name || !Number.isFinite(price) || price <= 0) {
+  1257→      toast({
+  1258→        title: "Champs requis",
+  1259→        description: "Le nom et un prix valide sont obligatoires.",
+  1260→        variant: "destructive",
+  1261→      });
+  1262→      return;
+  1263→    }
+  1264→
+  1265→    const features = form.featuresText
+  1266→      .split("\n")
+  1267→      .map((s) => s.trim())
+  1268→      .filter(Boolean);
+  1269→    const practical = form.practicalText
+  1270→      .split("\n")
+  1271→      .map((s) => s.trim())
+  1272→      .filter(Boolean);
+  1273→    const warranty = Number(form.warrantyMonths);
+  1274→    const hasWarranty = Number.isFinite(warranty) && warranty > 0;
+  1275→    if (hasWarranty) {
+  1276→      practical.push(`Garantie boutique : ${Math.round(warranty)} mois`);
+  1277→    }
+  1278→
+  1279→    const oldPriceNum = Number(form.oldPrice);
+  1280→    const leadDays = Number(form.leadTimeDays);
+  1281→    const imageKeys =
+  1282→      form.imageKey !== "none" && IMG[form.imageKey] ? [form.imageKey] : [];
+  1283→
+  1284→    const stockQty = Math.max(0, Number(form.stockQty) || 0);
+  1285→
+  1286→    if (product) {
+  1287→      updateProduct(product.id, {
+  1288→        name,
+  1289→        brand: form.brand.trim() || "Générique",
+  1290→        category: form.category,
+  1291→        price: Math.round(price),
+  1292→        oldPrice:
+  1293→          Number.isFinite(oldPriceNum) && oldPriceNum > price
+  1294→            ? Math.round(oldPriceNum)
+  1295→            : undefined,
+  1296→        availability: form.availability,
+  1297→        leadTimeDays:
+  1298→          form.availability === "on_order" && Number.isFinite(leadDays)
+  1299→            ? Math.max(1, Math.round(leadDays))
+  1300→            : undefined,
+  1301→        shortDescription: form.shortDescription.trim() || name,
+  1302→        description:
+  1303→          form.description.trim() || form.shortDescription.trim() || name,
+  1304→        features,
+  1305→        practical,
+  1306→        featured: form.featured,
+  1307→        warrantyMonths: hasWarranty ? Math.round(warranty) : undefined,
+  1308→        imageKeys,
+  1309→        source: form.source.trim() || "Ajouté via l'admin",
+  1310→      });
+  1311→      setStock(product.id, stockQty);
+  1312→      toast({ title: "Produit modifié", description: name });
+  1313→    } else {
+  1314→      const id = `p-admin-${Date.now().toString(36)}`;
+  1315→      const newProduct: Product = {
+  1316→        id,
+  1317→        slug: `${slugify(name) || "produit"}-${id.slice(-4)}`,
+  1318→        name,
+  1319→        brand: form.brand.trim() || "Générique",
+  1320→        category: form.category,
+  1321→        price: Math.round(price),
+  1322→        oldPrice:
+  1323→          Number.isFinite(oldPriceNum) && oldPriceNum > price
+  1324→            ? Math.round(oldPriceNum)
+  1325→            : undefined,
+  1326→        availability: form.availability,
+  1327→        leadTimeDays:
+  1328→          form.availability === "on_order" && Number.isFinite(leadDays)
+  1329→            ? Math.max(1, Math.round(leadDays))
+  1330→            : undefined,
+  1331→        imageKeys,
+  1332→        shortDescription: form.shortDescription.trim() || name,
+  1333→        description:
+  1334→          form.description.trim() || form.shortDescription.trim() || name,
+  1335→        features,
+  1336→        practical,
+  1337→        featured: form.featured,
+  1338→        warrantyMonths: hasWarranty ? Math.round(warranty) : undefined,
+  1339→        source: form.source.trim() || "Ajouté via l'admin",
+  1340→      };
+  1341→      addProduct(newProduct, stockQty);
+  1342→      toast({ title: "Produit ajouté", description: name });
+  1343→    }
+  1344→    onClose();
+  1345→  };
+  1346→
+  1347→  const inputCls =
+  1348→    "h-10 rounded-md border-[#2a2a2a] bg-[#0b0b0b] text-[#f5f2e9]";
+  1349→  const selectCls = "rounded-md border-[#2a2a2a] bg-[#161616] text-[#f5f2e9]";
+  1350→
+  1351→  return (
+  1352→    <Dialog
+  1353→      open={open}
+  1354→      onOpenChange={(v) => {
+  1355→        if (!v) onClose();
+  1356→      }}
+  1357→    >
+  1358→      <DialogContent className="max-h-[90vh] overflow-y-auto rounded-md border-[#2a2a2a] bg-[#161616] text-[#f5f2e9] sm:max-w-2xl">
+  1359→        <DialogHeader>
+  1360→          <DialogTitle className="text-[#f5f2e9]">
+  1361→            {product ? "Modifier le produit" : "Nouveau produit"}
+  1362→          </DialogTitle>
+  1363→          <DialogDescription className="text-[#a3a3a3]">
+  1364→            Les champs marqués * sont obligatoires. Le produit apparaît
+  1365→            immédiatement sur le site.
+  1366→          </DialogDescription>
+  1367→        </DialogHeader>
+  1368→
+  1369→        <form onSubmit={submit} className="grid gap-3.5">
+  1370→          <div className="grid gap-2">
+  1371→            <Label htmlFor="pf-name" className="text-[#f5f2e9]">
+  1372→              Nom du produit *
+  1373→            </Label>
+  1374→            <Input
+  1375→              id="pf-name"
+  1376→              value={form.name}
+  1377→              onChange={(e) => set({ name: e.target.value })}
+  1378→              placeholder="Ex. : Blender Moulinex 2 L"
+  1379→              className={inputCls}
+  1380→            />
+  1381→          </div>
+  1382→
+  1383→          <div className="grid gap-3 sm:grid-cols-2">
+  1384→            <div className="grid gap-2">
+  1385→              <Label htmlFor="pf-brand" className="text-[#f5f2e9]">
+  1386→                Marque
+  1387→              </Label>
+  1388→              <Input
+  1389→                id="pf-brand"
+  1390→                value={form.brand}
+  1391→                onChange={(e) => set({ brand: e.target.value })}
+  1392→                className={inputCls}
+  1393→              />
+  1394→            </div>
+  1395→            <div className="grid gap-2">
+  1396→              <Label htmlFor="pf-cat" className="text-[#f5f2e9]">
+  1397→                Catégorie *
+  1398→              </Label>
+  1399→              <Select
+  1400→                value={form.category}
+  1401→                onValueChange={(v) => set({ category: v as CategoryId })}
+  1402→              >
+  1403→                <SelectTrigger id="pf-cat" className={inputCls}>
+  1404→                  <SelectValue />
+  1405→                </SelectTrigger>
+  1406→                <SelectContent className={selectCls}>
+  1407→                  {CATEGORIES.map((c) => (
+  1408→                    <SelectItem key={c.id} value={c.id}>
+  1409→                      {c.name}
+  1410→                    </SelectItem>
+  1411→                  ))}
+  1412→                </SelectContent>
+  1413→              </Select>
+  1414→            </div>
+  1415→          </div>
+  1416→
+  1417→          <div className="grid gap-3 sm:grid-cols-3">
+  1418→            <div className="grid gap-2">
+  1419→              <Label htmlFor="pf-price" className="text-[#f5f2e9]">
+  1420→                Prix (FCFA) *
+  1421→              </Label>
+  1422→              <Input
+  1423→                id="pf-price"
+  1424→                type="number"
+  1425→                min={0}
+  1426→                value={form.price}
+  1427→                onChange={(e) => set({ price: e.target.value })}
+  1428→                className={inputCls}
+  1429→              />
+  1430→            </div>
+  1431→            <div className="grid gap-2">
+  1432→              <Label htmlFor="pf-old" className="text-[#f5f2e9]">
+  1433→                Ancien prix
+  1434→              </Label>
+  1435→              <Input
+  1436→                id="pf-old"
+  1437→                type="number"
+  1438→                min={0}
+  1439→                value={form.oldPrice}
+  1440→                onChange={(e) => set({ oldPrice: e.target.value })}
+  1441→                className={inputCls}
+  1442→              />
+  1443→            </div>
+  1444→            <div className="grid gap-2">
+  1445→              <Label htmlFor="pf-stock" className="text-[#f5f2e9]">
+  1446→                Stock
+  1447→              </Label>
+  1448→              <Input
+  1449→                id="pf-stock"
+  1450→                type="number"
+  1451→                min={0}
+  1452→                value={form.stockQty}
+  1453→                onChange={(e) => set({ stockQty: e.target.value })}
+  1454→                className={inputCls}
+  1455→              />
+  1456→            </div>
+  1457→          </div>
+  1458→
+  1459→          <div className="grid gap-3 sm:grid-cols-3">
+  1460→            <div className="grid gap-2">
+  1461→              <Label htmlFor="pf-avail" className="text-[#f5f2e9]">
+  1462→                Disponibilité
+  1463→              </Label>
+  1464→              <Select
+  1465→                value={form.availability}
+  1466→                onValueChange={(v) =>
+  1467→                  set({ availability: v as ProductForm["availability"] })
+  1468→                }
+  1469→              >
+  1470→                <SelectTrigger id="pf-avail" className={inputCls}>
+  1471→                  <SelectValue />
+  1472→                </SelectTrigger>
+  1473→                <SelectContent className={selectCls}>
+  1474→                  <SelectItem value="in_stock">En stock</SelectItem>
+  1475→                  <SelectItem value="on_order">Sur commande</SelectItem>
+  1476→                </SelectContent>
+  1477→              </Select>
+  1478→            </div>
+  1479→            {form.availability === "on_order" && (
+  1480→              <div className="grid gap-2">
+  1481→                <Label htmlFor="pf-lead" className="text-[#f5f2e9]">
+  1482→                  Délai (jours)
+  1483→                </Label>
+  1484→                <Input
+  1485→                  id="pf-lead"
+  1486→                  type="number"
+  1487→                  min={1}
+  1488→                  value={form.leadTimeDays}
+  1489→                  onChange={(e) => set({ leadTimeDays: e.target.value })}
+  1490→                  className={inputCls}
+  1491→                />
+  1492→              </div>
+  1493→            )}
+  1494→            <div className="grid gap-2">
+  1495→              <Label htmlFor="pf-warranty" className="text-[#f5f2e9]">
+  1496→                Garantie (mois)
+  1497→              </Label>
+  1498→              <Input
+  1499→                id="pf-warranty"
+  1500→                type="number"
+  1501→                min={0}
+  1502→                value={form.warrantyMonths}
+  1503→                onChange={(e) => set({ warrantyMonths: e.target.value })}
+  1504→                className={inputCls}
+  1505→              />
+  1506→            </div>
+  1507→          </div>
+  1508→
+  1509→          <div className="grid gap-2">
+  1510→            <Label htmlFor="pf-short" className="text-[#f5f2e9]">
+  1511→              Description courte *
+  1512→            </Label>
+  1513→            <Input
+  1514→              id="pf-short"
+  1515→              value={form.shortDescription}
+  1516→              onChange={(e) => set({ shortDescription: e.target.value })}
+  1517→              placeholder="Une ligne qui donne envie"
+  1518→              className={inputCls}
+  1519→            />
+  1520→          </div>
+  1521→
+  1522→          <div className="grid gap-2">
+  1523→            <Label htmlFor="pf-desc" className="text-[#f5f2e9]">
+  1524→              Description complète
+  1525→            </Label>
+  1526→            <Textarea
+  1527→              id="pf-desc"
+  1528→              value={form.description}
+  1529→              onChange={(e) => set({ description: e.target.value })}
+  1530→              rows={3}
+  1531→              className="rounded-md border-[#2a2a2a] bg-[#0b0b0b] text-[#f5f2e9]"
+  1532→            />
+  1533→          </div>
+  1534→
+  1535→          <div className="grid gap-3 sm:grid-cols-2">
+  1536→            <div className="grid gap-2">
+  1537→              <Label htmlFor="pf-features" className="text-[#f5f2e9]">
+  1538→                Points forts (1 par ligne)
+  1539→              </Label>
+  1540→              <Textarea
+  1541→                id="pf-features"
+  1542→                value={form.featuresText}
+  1543→                onChange={(e) => set({ featuresText: e.target.value })}
+  1544→                rows={4}
+  1545→                className="rounded-md border-[#2a2a2a] bg-[#0b0b0b] text-[#f5f2e9]"
+  1546→              />
+  1547→            </div>
+  1548→            <div className="grid gap-2">
+  1549→              <Label htmlFor="pf-practical" className="text-[#f5f2e9]">
+  1550→                Infos pratiques (1 par ligne)
+  1551→              </Label>
+  1552→              <Textarea
+  1553→                id="pf-practical"
+  1554→                value={form.practicalText}
+  1555→                onChange={(e) => set({ practicalText: e.target.value })}
+  1556→                rows={4}
+  1557→                className="rounded-md border-[#2a2a2a] bg-[#0b0b0b] text-[#f5f2e9]"
+  1558→              />
+  1559→            </div>
+  1560→          </div>
+  1561→
+  1562→          <div className="grid gap-3 sm:grid-cols-2">
+  1563→            <div className="grid gap-2">
+  1564→              <Label htmlFor="pf-img" className="text-[#f5f2e9]">
+  1565→                Illustration
+  1566→              </Label>
+  1567→              <Select
+  1568→                value={form.imageKey}
+  1569→                onValueChange={(v) => set({ imageKey: v })}
+  1570→              >
+  1571→                <SelectTrigger id="pf-img" className={inputCls}>
+  1572→                  <SelectValue />
+  1573→                </SelectTrigger>
+  1574→                <SelectContent className={selectCls}>
+  1575→                  <SelectItem value="none">Aucune (placeholder)</SelectItem>
+  1576→                  {IMAGE_KEYS.map((k) => (
+  1577→                    <SelectItem key={k} value={k}>
+  1578→                      {k.replace("p_", "").replaceAll("_", " ")}
+  1579→                    </SelectItem>
+  1580→                  ))}
+  1581→                </SelectContent>
+  1582→              </Select>
+  1583→            </div>
+  1584→            <div className="grid content-end gap-2">
+  1585→              <Label
+  1586→                htmlFor="pf-featured"
+  1587→                className="flex items-center justify-between text-[#f5f2e9]"
+  1588→              >
+  1589→                Mettre en vedette (accueil)
+  1590→                <Switch
+  1591→                  id="pf-featured"
+  1592→                  checked={form.featured}
+  1593→                  onCheckedChange={(v) => set({ featured: v })}
+  1594→                />
+  1595→              </Label>
+  1596→            </div>
+  1597→          </div>
+  1598→
+  1599→          <div className="mt-1 flex justify-end gap-2">
+  1600→            <Button
+  1601→              type="button"
+  1602→              variant="outline"
+  1603→              className="rounded-md border-[#2a2a2a] bg-transparent font-bold text-[#f5f2e9] hover:bg-[#1e1e1e]"
+  1604→              onClick={onClose}
+  1605→            >
+  1606→              Annuler
+  1607→            </Button>
+  1608→            <Button
+  1609→              type="submit"
+  1610→              className="rounded-md bg-[#d4af37] font-extrabold text-[#0b0b0b] hover:bg-[#bfa032]"
+  1611→            >
+  1612→              {product ? "Enregistrer" : "Ajouter le produit"}
+  1613→            </Button>
+  1614→          </div>
+  1615→        </form>
+  1616→      </DialogContent>
+  1617→    </Dialog>
+  1618→  );
+  1619→}
+  1620→
+  1621→/* ————— Onglet : réglages ————— */
+  1622→
+  1623→function SettingsTab() {
+  1624→  const banner = useShop((s) => s.banner);
+  1625→  const setBanner = useShop((s) => s.setBanner);
+  1626→  const adminOrders = useShop((s) => s.adminOrders);
+  1627→  const resetDemoData = useShop((s) => s.resetDemoData);
+  1628→  const adminLogout = useShop((s) => s.adminLogout);
+  1629→
+  1630→  const [text, setText] = useState(banner.text);
+  1631→  const [enabled, setEnabled] = useState(banner.enabled);
+  1632→
+  1633→  const exportCsv = () => {
+  1634→    const header = [
+  1635→      "Numéro",
+  1636→      "Date",
+  1637→      "Client",
+  1638→      "Téléphone",
+  1639→      "Email",
+  1640→      "Ville",
+  1641→      "Articles",
+  1642→      "Sous-total (FCFA)",
+  1643→      "Réduction (FCFA)",
+  1644→      "Livraison (FCFA)",
+  1645→      "Total (FCFA)",
+  1646→      "Paiement",
+  1647→      "Statut",
+  1648→    ];
+  1649→    const rows = adminOrders.map((o) => [
+  1650→      o.id,
+  1651→      fmtDateTime(o.createdAt),
+  1652→      o.name,
+  1653→      o.phone,
+  1654→      o.email ?? "",
+  1655→      o.city,
+  1656→      o.lines.map((l) => `${l.qty}x ${l.name}`).join(" | "),
+  1657→      String(o.subtotal),
+  1658→      String(o.discount),
+  1659→      String(o.shipping),
+  1660→      String(o.total),
+  1661→      o.paymentLabel,
+  1662→      ORDER_STATUS_LABELS[statusOf(o)],
+  1663→    ]);
+  1664→    const csv = [header, ...rows]
+  1665→      .map((r) => r.map((c) => `"${c.replaceAll('"', '""')}"`).join(";"))
+  1666→      .join("\n");
+  1667→    const blob = new Blob(["\uFEFF" + csv], {
+  1668→      type: "text/csv;charset=utf-8",
+  1669→    });
+  1670→    const url = URL.createObjectURL(blob);
+  1671→    const a = document.createElement("a");
+  1672→    a.href = url;
+  1673→    a.download = "commandes-maison-cauris.csv";
+  1674→    a.click();
+  1675→    URL.revokeObjectURL(url);
+  1676→    toast({
+  1677→      title: "Export réussi",
+  1678→      description: `${adminOrders.length} commande(s) exportée(s).`,
+  1679→    });
+  1680→  };
+  1681→
+  1682→  const card = "rounded-md border border-[#2a2a2a] bg-[#161616] p-5 sm:p-6";
+  1683→
+  1684→  return (
+  1685→    <div className="grid max-w-3xl gap-5">
+  1686→      <div>
+  1687→        <h1 className="text-xl font-extrabold sm:text-2xl">Réglages</h1>
+  1688→        <p className="mt-1 text-sm text-[#a3a3a3]">
+  1689→          Pilotez le site public et vos données.
+  1690→        </p>
+  1691→      </div>
+  1692→
+  1693→      {/* Bandeau d'annonce */}
+  1694→      <section className={card} aria-label="Bandeau d'annonce">
+  1695→        <h2 className="flex items-center gap-2 font-extrabold">
+  1696→          <Megaphone
+  1697→            className="h-4.5 w-4.5 text-[#d4af37]"
+  1698→            aria-hidden="true"
+  1699→          />
+  1700→          Bandeau d&apos;annonce du site
+  1701→        </h2>
+  1702→        <p className="mt-1 text-sm text-[#a3a3a3]">
+  1703→          Affiche un message en haut de la boutique (promotions, fermeture,
+  1704→          livraison offerte…).
+  1705→        </p>
+  1706→        <div className="mt-4 grid gap-3">
+  1707→          <div className="flex items-center justify-between gap-4">
+  1708→            <Label
+  1709→              htmlFor="banner-enabled"
+  1710→              className="text-sm font-bold text-[#f5f2e9]"
+  1711→            >
+  1712→              Afficher le bandeau
+  1713→            </Label>
+  1714→            <Switch
+  1715→              id="banner-enabled"
+  1716→              checked={enabled}
+  1717→              onCheckedChange={(v) => {
+  1718→                setEnabled(v);
+  1719→                setBanner(v, text);
+  1720→                toast({ title: v ? "Bandeau activé" : "Bandeau désactivé" });
+  1721→              }}
+  1722→            />
+  1723→          </div>
+  1724→          <Input
+  1725→            id="banner-text"
+  1726→            value={text}
+  1727→            onChange={(e) => setText(e.target.value)}
+  1728→            placeholder="Ex. : Livraison offerte à Cotonou jusqu'au 30 du mois !"
+  1729→            className="h-11 rounded-md border-[#2a2a2a] bg-[#0b0b0b] text-[#f5f2e9]"
+  1730→          />
+  1731→          <div className="flex items-center justify-between gap-3">
+  1732→            <p className="min-w-0 flex-1 truncate rounded-md border border-[#2a2a2a] bg-[#0b0b0b] px-3 py-2 text-xs text-[#a3a3a3]">
+  1733→              Aperçu :{" "}
+  1734→              <span className="font-bold text-[#d4af37]">
+  1735→                {text.trim() || "(vide)"}
+  1736→              </span>
+  1737→            </p>
+  1738→            <Button
+  1739→              size="sm"
+  1740→              className="rounded-md bg-[#d4af37] font-extrabold text-[#0b0b0b] hover:bg-[#bfa032]"
+  1741→              onClick={() => {
+  1742→                setBanner(enabled, text);
+  1743→                toast({ title: "Bandeau enregistré" });
+  1744→              }}
+  1745→            >
+  1746→              Enregistrer
+  1747→            </Button>
+  1748→          </div>
+  1749→        </div>
+  1750→      </section>
+  1751→
+  1752→      {/* Export CSV */}
+  1753→      <section className={card} aria-label="Export des commandes">
+  1754→        <h2 className="flex items-center gap-2 font-extrabold">
+  1755→          <Download
+  1756→            className="h-4.5 w-4.5 text-[#d4af37]"
+  1757→            aria-hidden="true"
+  1758→          />
+  1759→          Export des commandes
+  1760→        </h2>
+  1761→        <p className="mt-1 text-sm text-[#a3a3a3]">
+  1762→          Téléchargez toutes les commandes au format CSV (ouvrable dans Excel).
+  1763→        </p>
+  1764→        <Button
+  1765→          variant="outline"
+  1766→          className="mt-4 rounded-md border-[#d4af37]/50 bg-transparent font-bold text-[#d4af37] hover:bg-[#d4af37]/10"
+  1767→          onClick={exportCsv}
+  1768→          disabled={adminOrders.length === 0}
+  1769→        >
+  1770→          <Download className="h-4 w-4" aria-hidden="true" />
+  1771→          Exporter ({adminOrders.length})
+  1772→        </Button>
+  1773→      </section>
+  1774→
+  1775→      {/* Session */}
+  1776→      <section className={card} aria-label="Session administrateur">
+  1777→        <h2 className="flex items-center gap-2 font-extrabold">
+  1778→          <LogOut className="h-4.5 w-4.5 text-[#d4af37]" aria-hidden="true" />
+  1779→          Session
+  1780→        </h2>
+  1781→        <p className="mt-1 text-sm text-[#a3a3a3]">
+  1782→          Fermez la session admin sur cet appareil.
+  1783→        </p>
+  1784→        <Button
+  1785→          variant="outline"
+  1786→          className="mt-4 rounded-md border-[#2a2a2a] bg-transparent font-bold text-[#f5f2e9] hover:bg-[#1e1e1e]"
+  1787→          onClick={() => {
+  1788→            adminLogout();
+  1789→            toast({ title: "Session fermée" });
+  1790→          }}
+  1791→        >
+  1792→          Se déconnecter
+  1793→        </Button>
+  1794→      </section>
+  1795→
+  1796→      {/* Réinitialisation */}
+  1797→      <section
+  1798→        className="rounded-md border border-[#f87171]/30 bg-[#161616] p-5 sm:p-6"
+  1799→        aria-label="Réinitialisation des données"
+  1800→      >
+  1801→        <h2 className="flex items-center gap-2 font-extrabold text-[#fca5a5]">
+  1802→          <RotateCcw className="h-4.5 w-4.5" aria-hidden="true" />
+  1803→          Réinitialiser les données
+  1804→        </h2>
+  1805→        <p className="mt-1 text-sm text-[#a3a3a3]">
+  1806→          Remet le catalogue, les stocks, les comptes et les commandes à
+  1807→          l&apos;état de démonstration. À utiliser avec précaution.
+  1808→        </p>
+  1809→        <AlertDialog>
+  1810→          <AlertDialogTrigger asChild>
+  1811→            <Button
+  1812→              variant="outline"
+  1813→              className="mt-4 rounded-md border-[#f87171]/50 bg-transparent font-bold text-[#fca5a5] hover:bg-[#f87171]/10"
+  1814→            >
+  1815→              <Trash2 className="h-4 w-4" aria-hidden="true" />
+  1816→              Réinitialiser
+  1817→            </Button>
+  1818→          </AlertDialogTrigger>
+  1819→          <AlertDialogContent className="rounded-md border-[#2a2a2a] bg-[#161616]">
+  1820→            <AlertDialogHeader>
+  1821→              <AlertDialogTitle className="text-[#f5f2e9]">
+  1822→                Tout réinitialiser ?
+  1823→              </AlertDialogTitle>
+  1824→              <AlertDialogDescription className="text-[#a3a3a3]">
+  1825→                Catalogue, stocks, comptes clients, commandes et fidélité
+  1826→                reviennent aux données de démo. Cette action est immédiate.
+  1827→              </AlertDialogDescription>
+  1828→            </AlertDialogHeader>
+  1829→            <AlertDialogFooter>
+  1830→              <AlertDialogCancel className="rounded-md border-[#2a2a2a] bg-transparent text-[#f5f2e9] hover:bg-[#1e1e1e]">
+  1831→                Annuler
+  1832→              </AlertDialogCancel>
+  1833→              <AlertDialogAction
+  1834→                className="rounded-md bg-[#f87171] font-bold text-[#0b0b0b] hover:bg-[#ef4444]"
+  1835→                onClick={() => {
+  1836→                  resetDemoData();
+  1837→                  toast({
+  1838→                    title: "Données réinitialisées",
+  1839→                    description: "La démo repart de zéro.",
+  1840→                  });
+  1841→                }}
+  1842→              >
+  1843→                Réinitialiser
+  1844→              </AlertDialogAction>
+  1845→            </AlertDialogFooter>
+  1846→          </AlertDialogContent>
+  1847→        </AlertDialog>
+  1848→      </section>
+  1849→    </div>
+  1850→  );
+  1851→}
+  1852→

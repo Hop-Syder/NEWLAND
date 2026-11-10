@@ -53,9 +53,13 @@ export function ProductCard({ product }: { product: Product }) {
             leadTimeDays={product.leadTimeDays}
           />
         </div>
-        {product.oldPrice && (
+        {product.oldPrice && product.oldPrice > product.price && (
           <span className="absolute right-3 top-3 rounded-md bg-[#d4af37] px-2.5 py-1 text-xs font-extrabold text-[#0b0b0b] shadow">
-            Promo
+            Promo −
+            {Math.round(
+              ((product.oldPrice - product.price) / product.oldPrice) * 100
+            )}{' '}
+            %
           </span>
         )}
       </div>
@@ -67,6 +71,19 @@ export function ProductCard({ product }: { product: Product }) {
         <h3 className="line-clamp-2 text-base font-bold leading-snug text-foreground">
           {product.name}
         </h3>
+
+        {(product.tags?.length ?? 0) > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {product.tags!.slice(0, 2).map((t) => (
+              <span
+                key={t}
+                className="rounded-md border border-[#e6e3db] bg-white px-2 py-0.5 text-[11px] font-bold text-[#8a6a14]"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
 
         <div className="mt-auto flex items-end justify-between gap-2 pt-2">
           <div>

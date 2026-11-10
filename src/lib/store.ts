@@ -274,8 +274,15 @@ interface ShopState {
   updateProduct: (id: string, patch: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
   setStock: (id: string, qty: number) => void;
+  /** Met un produit en promo : le prix actuel devient le prix barré et le
+   *  prix baisse du pourcentage indiqué (ex. 15 → −15 %). */
+  applyPromo: (id: string, percent: number) => void;
+  /** Retire la promo : le prix barré redevient le prix de vente. */
+  removePromo: (id: string) => void;
   /** Change le statut d'une commande (adminOrders + commandes du client). */
   setOrderStatus: (orderId: string, status: OrderStatus) => void;
+  /** Supprime définitivement un compte client (registre admin). */
+  deleteClient: (id: string) => void;
   /** Connexion admin. Retourne true si le mot de passe est correct. */
   adminLogin: (password: string) => boolean;
   adminLogout: () => void;
@@ -560,6 +567,28 @@ export const useShop = create<ShopState>()(
       setStock: (id, qty) =>
         set((s) => ({ stock: { ...s.stock, [id]: Math.max(0, qty) } })),
 
+      applyPromo: (id, percent) =>
+        set((s) => ({
+          products: s.products.map((p) => {
+            if (p.id !== id) return p;
+            const pct = Math.min(90, Math.max(1, Math.round(percent)));
+            // Le prix actuel devient la référence barrée ; le prix baisse.
+            const base = p.oldPrice && p.oldPrice > p.price ? p.oldPrice : p.price;
+            const newPrice = Math.max(0, Math.round((base * (100 - pct)) / 100));
+            if (newPrice >= base) return p;
+            return { ...p, oldPrice: base, price: newPrice };
+          }),
+        })),
+
+      removePromo: (id) =>
+        set((s) => ({
+          products: s.products.map((p) =>
+            p.id === id && p.oldPrice && p.oldPrice > p.price
+              ? { ...p, price: p.oldPrice, oldPrice: undefined }
+              : p
+          ),
+        })),
+
       setOrderStatus: (orderId, status) =>
         set((s) => ({
           adminOrders: s.adminOrders.map((o) =>
@@ -581,6 +610,32 @@ export const useShop = create<ShopState>()(
       },
 
       adminLogout: () => set({ adminLoggedIn: false }),
+
+      deleteClient: (id) =>
+        set((s) => {
+          const target = s.clients.find((cl) => cl.id === id);
+          const isDeviceCustomer =
+            !!target && !!s.customer && phoneMatches(s.customer.phone, target.phone);
+          return {
+            clients: s.clients.filter((cl) => cl.id !== id),
+            // Si l'admin supprime le compte du client connecté sur cet
+            // appareil, on ferme proprement sa session locale aussi.
+            ...(isDeviceCustomer
+              ? {
+                  customer: null,
+                  orders: [],
+                  lastOrder: null,
+                  loyaltyPoints: 0,
+                  lifetimePoints: 0,
+                  activeReward: null,
+                  pin: null,
+                  pinSetAt: null,
+                  credentialsSentTo: null,
+                  sessionActive: false,
+                }
+              : {}),
+          };
+        }),
 
       setBanner: (enabled, text) =>
         set((s) => ({

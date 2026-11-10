@@ -169,6 +169,18 @@ export function ProductView() {
               <h1 className="mt-1 text-2xl font-extrabold leading-snug text-[#0b0b0b] sm:text-3xl">
                 {product.name}
               </h1>
+              {(product.tags?.length ?? 0) > 0 && (
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                  {product.tags!.map((t) => (
+                    <span
+                      key={t}
+                      className="rounded-md border border-[#e6e3db] bg-white px-2.5 py-1 text-xs font-bold text-[#8a6a14]"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex flex-wrap items-baseline gap-3">
