@@ -16,8 +16,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import {
   CATEGORIES,
-  PRODUCTS,
-  countByCategory,
   type Product,
 } from "@/lib/products";
 import { useShop } from "@/lib/store";
@@ -46,18 +44,18 @@ export function CatalogView() {
   const openCatalog = useShop((s) => s.openCatalog);
   const searchQuery = useShop((s) => s.searchQuery);
   const setSearch = useShop((s) => s.setSearch);
+  const products = useShop((s) => s.products);
 
   const [sort, setSort] = useState<SortKey>("pertinence");
   const [onlyStock, setOnlyStock] = useState(false);
-  const [maxPrice, setMaxPrice] = useState<number>(() =>
-    Math.max(...PRODUCTS.map((p) => p.price))
-  );
-
-  const ABS_MAX = Math.max(...PRODUCTS.map((p) => p.price));
+  const ABS_MAX = products.length
+    ? Math.max(...products.map((p) => p.price))
+    : 0;
+  const [maxPrice, setMaxPrice] = useState<number>(ABS_MAX);
 
   const results = useMemo(() => {
     const cat = catalogCategory === "all" ? null : catalogCategory;
-    let list = PRODUCTS.filter(
+    let list = products.filter(
       (p) => (!cat || p.category === cat) && matchesSearch(p, searchQuery)
     );
     if (onlyStock) list = list.filter((p) => p.availability === "in_stock");
@@ -80,7 +78,7 @@ export function CatalogView() {
         );
     }
     return list;
-  }, [catalogCategory, searchQuery, onlyStock, maxPrice, sort]);
+  }, [products, catalogCategory, searchQuery, onlyStock, maxPrice, sort]);
 
   const activeCategoryLabel =
     catalogCategory === "all"
@@ -128,7 +126,7 @@ export function CatalogView() {
             }`}
           >
             <LayoutGrid className="h-4 w-4" aria-hidden="true" />
-            Tout ({PRODUCTS.length})
+            Tout ({products.length})
           </button>
           {CATEGORIES.map((c) => (
             <button
@@ -143,7 +141,7 @@ export function CatalogView() {
                   : "border border-[#d8d4ca] bg-white text-[#111111] hover:bg-[#eeebe4]"
               }`}
             >
-              {c.name} ({countByCategory(c.id)})
+              {c.name} ({products.filter((p) => p.category === c.id).length})
             </button>
           ))}
         </div>

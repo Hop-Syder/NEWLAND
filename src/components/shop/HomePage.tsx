@@ -10,7 +10,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CATEGORIES, PRODUCTS, countByCategory } from "@/lib/products";
+import { CATEGORIES } from "@/lib/products";
 import { imgFor } from "@/lib/images";
 import { useShop } from "@/lib/store";
 import { Reveal, useParallax } from "./Reveal";
@@ -27,10 +27,11 @@ const REASSURANCE = [
 export function HomePage() {
   const openCatalog = useShop((s) => s.openCatalog);
   const openProduct = useShop((s) => s.openProduct);
+  const products = useShop((s) => s.products);
   const parallaxRef = useParallax(0.12);
 
-  const featured = PRODUCTS.filter((p) => p.featured).slice(0, 8);
-  const bestBuys = PRODUCTS.filter((p) => p.price <= 30000).slice(0, 4);
+  const featured = products.filter((p) => p.featured).slice(0, 8);
+  const bestBuys = products.filter((p) => p.price <= 30000).slice(0, 4);
 
   return (
     <div className="flex flex-col">
@@ -217,7 +218,7 @@ export function HomePage() {
             <Reveal key={cat.id} delay={i * 100}>
               <CategoryCard
                 categoryId={cat.id}
-                count={countByCategory(cat.id)}
+                count={products.filter((p) => p.category === cat.id).length}
                 onClick={() => openCatalog(cat.id)}
               />
             </Reveal>

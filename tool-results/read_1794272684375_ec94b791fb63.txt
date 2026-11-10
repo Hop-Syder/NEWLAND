@@ -1,0 +1,1755 @@
+     1→"use client";
+     2→
+     3→/**
+     4→ * Espace client Maison Cauris.
+     5→ * Onglets : Aperçu · Commandes (suivi + garantie) · Fidélité · Paramètres.
+     6→ * Le compte est créé automatiquement lors de la première commande ;
+     7→ * sans compte, on affiche les avantages et un formulaire de création.
+     8→ */
+     9→
+    10→import { useMemo, useState } from "react";
+    11→import {
+    12→  Award,
+    13→  BadgeCheck,
+    14→  CalendarClock,
+    15→  ChevronDown,
+    16→  Copy,
+    17→  Eye,
+    18→  EyeOff,
+    19→  Gem,
+    20→  Gift,
+    21→  Headset,
+    22→  KeyRound,
+    23→  LayoutDashboard,
+    24→  LockKeyhole,
+    25→  LogOut,
+    26→  MailCheck,
+    27→  MapPin,
+    28→  Package,
+    29→  PackageCheck,
+    30→  Phone,
+    31→  RefreshCcw,
+    32→  Settings,
+    33→  ShieldCheck,
+    34→  ShoppingBasket,
+    35→  Sparkles,
+    36→  Trash2,
+    37→  Truck,
+    38→  UserRound,
+    39→  Wallet,
+    40→} from "lucide-react";
+    41→import { toast } from "@/hooks/use-toast";
+    42→import { Button } from "@/components/ui/button";
+    43→import { Input } from "@/components/ui/input";
+    44→import { Label } from "@/components/ui/label";
+    45→import { Switch } from "@/components/ui/switch";
+    46→import { Progress } from "@/components/ui/progress";
+    47→import { Separator } from "@/components/ui/separator";
+    48→import { Badge } from "@/components/ui/badge";
+    49→import {
+    50→  Collapsible,
+    51→  CollapsibleContent,
+    52→  CollapsibleTrigger,
+    53→} from "@/components/ui/collapsible";
+    54→import {
+    55→  AlertDialog,
+    56→  AlertDialogAction,
+    57→  AlertDialogCancel,
+    58→  AlertDialogContent,
+    59→  AlertDialogDescription,
+    60→  AlertDialogFooter,
+    61→  AlertDialogHeader,
+    62→  AlertDialogTitle,
+    63→  AlertDialogTrigger,
+    64→} from "@/components/ui/alert-dialog";
+    65→import {
+    66→  Select,
+    67→  SelectContent,
+    68→  SelectItem,
+    69→  SelectTrigger,
+    70→  SelectValue,
+    71→} from "@/components/ui/select";
+    72→import { imgFor } from "@/lib/images";
+    73→import { formatFCFA, formatDateLong } from "@/lib/format";
+    74→import {
+    75→  cheapestReward,
+    76→  nextTier,
+    77→  rewardLabel,
+    78→  REWARDS,
+    79→  tierFor,
+    80→  pointsForAmount,
+    81→  type Reward,
+    82→} from "@/lib/loyalty";
+    83→import {
+    84→  isValidEmail,
+    85→  isValidPin,
+    86→  orderStage,
+    87→  phoneMatches,
+    88→  useShop,
+    89→  warrantyActive,
+    90→  warrantyEnd,
+    91→  type AccountTab,
+    92→  type Customer,
+    93→  type Order,
+    94→} from "@/lib/store";
+    95→import { SafeImg } from "./SafeImg";
+    96→import { Reveal } from "./Reveal";
+    97→import { getProduct } from "@/lib/products";
+    98→
+    99→const GOLD = "#d4af37";
+   100→const GOLD_DARK = "#8a6a14";
+   101→const GOLD_BG = "#f4eeda";
+   102→const WHATSAPP = "https://wa.me/2290197000000";
+   103→
+   104→const TABS: { id: AccountTab; label: string; icon: typeof Package }[] = [
+   105→  { id: "overview", label: "Aperçu", icon: LayoutDashboard },
+   106→  { id: "orders", label: "Commandes", icon: Package },
+   107→  { id: "loyalty", label: "Fidélité", icon: Gem },
+   108→  { id: "settings", label: "Paramètres", icon: Settings },
+   109→];
+   110→
+   111→export function AccountView() {
+   112→  const customer = useShop((s) => s.customer);
+   113→  const sessionActive = useShop((s) => s.sessionActive);
+   114→  const accountTab = useShop((s) => s.accountTab);
+   115→  const setAccountTab = useShop((s) => s.setAccountTab);
+   116→
+   117→  if (!customer) return <GuestAccount />;
+   118→
+   119→  // Sécurité : espace verrouillé tant que numéro + code PIN ne sont pas validés.
+   120→  if (!sessionActive) return <LoginGate />;
+   121→
+   122→  return (
+   123→    <div className="mx-auto w-full max-w-5xl px-4 py-8 lg:py-12">
+   124→      {/* En-tête compte */}
+   125→      <Reveal>
+   126→        <div className="flex flex-wrap items-center gap-4">
+   127→          <span className="flex h-14 w-14 items-center justify-center rounded-md bg-[#141414] text-xl font-extrabold text-white">
+   128→            {customer.name.trim().charAt(0).toUpperCase()}
+   129→          </span>
+   130→          <div className="min-w-0">
+   131→            <h1 className="truncate text-2xl font-extrabold text-[#0b0b0b]">
+   132→              {customer.name}
+   133→            </h1>
+   134→            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+   135→              <Phone className="h-3.5 w-3.5" aria-hidden="true" />
+   136→              {customer.phone}
+   137→            </p>
+   138→          </div>
+   139→          <TierBadge className="sm:ml-auto" />
+   140→        </div>
+   141→      </Reveal>
+   142→
+   143→      {/* Onglets */}
+   144→      <nav
+   145→        aria-label="Sections de l'espace client"
+   146→        className="mt-6 flex gap-1.5 overflow-x-auto nice-scroll rounded-md border border-[#e6e3db] bg-white p-1.5"
+   147→      >
+   148→        {TABS.map((t) => {
+   149→          const active = accountTab === t.id;
+   150→          return (
+   151→            <button
+   152→              key={t.id}
+   153→              type="button"
+   154→              onClick={() => setAccountTab(t.id)}
+   155→              aria-current={active ? "page" : undefined}
+   156→              className={`flex shrink-0 items-center gap-2 rounded-sm px-4 py-2 text-sm font-bold transition-colors ${
+   157→                active
+   158→                  ? "bg-[#141414] text-white"
+   159→                  : "text-[#3d3d3d] hover:bg-[#f1efe9]"
+   160→              }`}
+   161→            >
+   162→              <t.icon className="h-4 w-4" aria-hidden="true" />
+   163→              {t.label}
+   164→            </button>
+   165→          );
+   166→        })}
+   167→      </nav>
+   168→
+   169→      <div className="mt-6">
+   170→        {accountTab === "overview" && <OverviewTab />}
+   171→        {accountTab === "orders" && <OrdersTab />}
+   172→        {accountTab === "loyalty" && <LoyaltyTab />}
+   173→        {accountTab === "settings" && <SettingsTab />}
+   174→      </div>
+   175→    </div>
+   176→  );
+   177→}
+   178→
+   179→/* ------------------------------------------------------------------ */
+   180→/* Visiteur (pas encore de compte)                                     */
+   181→/* ------------------------------------------------------------------ */
+   182→
+   183→function GuestAccount() {
+   184→  const openCatalog = useShop((s) => s.openCatalog);
+   185→  const [showForm, setShowForm] = useState(false);
+   186→  const perks = [
+   187→    {
+   188→      icon: Package,
+   189→      title: "Suivi de commandes",
+   190→      text: "Historique, statut en direct, recommander en 1 tap.",
+   191→    },
+   192→    {
+   193→      icon: Gem,
+   194→      title: "Carte de fidélité",
+   195→      text: "10 000 F payés = 5 pts. Échangez contre −5 % ou −7 000 F.",
+   196→    },
+   197→    {
+   198→      icon: ShieldCheck,
+   199→      title: "Garantie 90 jours",
+   200→      text: "Chaque commande est garantie boutique, suivie ici.",
+   201→    },
+   202→    {
+   203→      icon: BadgeCheck,
+   204→      title: "Commander plus vite",
+   205→      text: "Coordonnées et adresses préremplies au checkout.",
+   206→    },
+   207→  ];
+   208→
+   209→  return (
+   210→    <div className="mx-auto w-full max-w-3xl px-4 py-12 lg:py-16">
+   211→      <Reveal>
+   212→        <div className="text-center">
+   213→          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-md bg-[#141414]">
+   214→            <UserRound className="h-8 w-8 text-[#d4af37]" aria-hidden="true" />
+   215→          </span>
+   216→          <h1 className="mt-4 text-3xl font-extrabold text-[#0b0b0b]">
+   217→            Votre espace client
+   218→          </h1>
+   219→          <p className="mt-2 text-muted-foreground">
+   220→            Aucune inscription à faire :{" "}
+   221→            <span className="font-bold text-[#8a6a14]">
+   222→              il se crée automatiquement à votre première commande.
+   223→            </span>{" "}
+   224→            Sécurisez-le ensuite avec un code PIN à 4 chiffres.
+   225→          </p>
+   226→          <div className="mt-5 flex flex-wrap justify-center gap-3">
+   227→            <Button
+   228→              size="lg"
+   229→              className="h-12 rounded-md bg-[#d4af37] px-7 font-extrabold hover:bg-[#bfa032]"
+   230→              onClick={openCatalog.bind(null, "all")}
+   231→            >
+   232→              Découvrir le catalogue
+   233→            </Button>
+   234→            <Button
+   235→              size="lg"
+   236→              variant="outline"
+   237→              className="h-12 rounded-md border-[#d4af37] px-7 font-bold text-[#8a6a14] hover:bg-[#f4eeda]"
+   238→              onClick={() => setShowForm(true)}
+   239→            >
+   240→              Créer mon compte maintenant
+   241→            </Button>
+   242→          </div>
+   243→        </div>
+   244→      </Reveal>
+   245→
+   246→      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+   247→        {perks.map((p, i) => (
+   248→          <Reveal key={p.title} delay={i * 0.06}>
+   249→            <div className="h-full rounded-md border border-[#e6e3db] bg-white p-5">
+   250→              <p.icon className="h-5 w-5 text-[#d4af37]" aria-hidden="true" />
+   251→              <p className="mt-2 font-extrabold text-[#111111]">{p.title}</p>
+   252→              <p className="mt-1 text-sm text-muted-foreground">{p.text}</p>
+   253→            </div>
+   254→          </Reveal>
+   255→        ))}
+   256→      </div>
+   257→
+   258→      {showForm && (
+   259→        <div className="mt-8">
+   260→          <SettingsTab />
+   261→        </div>
+   262→      )}
+   263→    </div>
+   264→  );
+   265→}
+   266→
+   267→/* ------------------------------------------------------------------ */
+   268→/* Porte sécurisée — compte existant mais session verrouillée          */
+   269→/* ------------------------------------------------------------------ */
+   270→
+   271→function LoginGate() {
+   272→  const customer = useShop((s) => s.customer);
+   273→  const pinStored = useShop((s) => s.pin);
+   274→  const setPin = useShop((s) => s.setPin);
+   275→  const unlock = useShop((s) => s.unlock);
+   276→  const saveCustomer = useShop((s) => s.saveCustomer);
+   277→  const resendCredentials = useShop((s) => s.resendCredentials);
+   278→
+   279→  const [phone, setPhone] = useState("");
+   280→  const [pin, setPinField] = useState("");
+   281→  const [confirm, setConfirm] = useState("");
+   282→  const [email, setEmail] = useState(customer?.email ?? "");
+   283→  const [show, setShow] = useState(false);
+   284→  const [wipeArmed, setWipeArmed] = useState(false);
+   285→
+   286→  const hasPin = typeof pinStored === "string";
+   287→  const lastDigits = customer
+   288→    ? customer.phone.replace(/\D/g, "").slice(-4)
+   289→    : "";
+   290→
+   291→  const submit = (e: React.FormEvent) => {
+   292→    e.preventDefault();
+   293→    if (!customer) return;
+   294→
+   295→    if (!phoneMatches(phone, customer.phone)) {
+   296→      toast({
+   297→        title: "Numéro inconnu",
+   298→        description: "Aucun compte lié à ce numéro sur cet appareil.",
+   299→        variant: "destructive",
+   300→      });
+   301→      return;
+   302→    }
+   303→
+   304→    if (!hasPin) {
+   305→      // Première sécurisation : le client choisit lui-même son code PIN.
+   306→      if (!isValidPin(pin)) {
+   307→        toast({
+   308→          title: "Code PIN invalide",
+   309→          description: "Choisissez exactement 4 chiffres.",
+   310→          variant: "destructive",
+   311→        });
+   312→        return;
+   313→      }
+   314→      if (pin !== confirm) {
+   315→        toast({
+   316→          title: "Codes différents",
+   317→          description: "La confirmation ne correspond pas.",
+   318→          variant: "destructive",
+   319→        });
+   320→        return;
+   321→      }
+   322→      const mail = email.trim();
+   323→      if (!isValidEmail(mail)) {
+   324→        toast({
+   325→          title: "Email requis",
+   326→          description: "La copie de vos identifiants y sera envoyée.",
+   327→          variant: "destructive",
+   328→        });
+   329→        return;
+   330→      }
+   331→      if (mail !== (customer.email ?? "")) {
+   332→        saveCustomer({ ...customer, email: mail });
+   333→      }
+   334→      setPin(pin);
+   335→      toast({
+   336→        title: "Compte sécurisé",
+   337→        description: `Copie des identifiants envoyée à ${mail}.`,
+   338→      });
+   339→      return;
+   340→    }
+   341→
+   342→    if (pin !== pinStored) {
+   343→      toast({
+   344→        title: "Code PIN incorrect",
+   345→        description: "Réessayez ou demandez une copie par email.",
+   346→        variant: "destructive",
+   347→      });
+   348→      return;
+   349→    }
+   350→
+   351→    unlock();
+   352→    toast({
+   353→      title: `Bienvenue ${customer.name.split(" ")[0]} !`,
+   354→      description: "Votre espace client est déverrouillé.",
+   355→    });
+   356→  };
+   357→
+   358→  const forgot = () => {
+   359→    const mail = resendCredentials();
+   360→    if (mail) {
+   361→      toast({
+   362→        title: "Copie envoyée",
+   363→        description: `Vos identifiants ont été renvoyés à ${mail}.`,
+   364→      });
+   365→    } else {
+   366→      toast({
+   367→        title: "Aucun email enregistré",
+   368→        description: "Effacez ce compte de cet appareil, puis recommandez.",
+   369→      });
+   370→    }
+   371→  };
+   372→
+   373→  const wipe = () => {
+   374→    try {
+   375→      useShop.persist.clearStorage();
+   376→    } catch {
+   377→      /* stockage indisponible : on recharge quand même */
+   378→    }
+   379→    window.location.reload();
+   380→  };
+   381→
+   382→  return (
+   383→    <div className="mx-auto w-full max-w-md px-4 py-12 lg:py-16">
+   384→      <Reveal>
+   385→        <div className="rounded-md border border-[#e6e3db] bg-white p-6 shadow-sm sm:p-8">
+   386→          <div className="text-center">
+   387→            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-md bg-[#141414]">
+   388→              <LockKeyhole className="h-7 w-7 text-[#d4af37]" aria-hidden="true" />
+   389→            </span>
+   390→            <h1 className="mt-4 text-2xl font-extrabold text-[#0b0b0b]">
+   391→              Espace client sécurisé
+   392→            </h1>
+   393→            <p className="mt-1.5 text-sm text-muted-foreground">
+   394→              {hasPin
+   395→                ? "Identifiez-vous avec votre numéro et votre code PIN à 4 chiffres."
+   396→                : "Confirmez votre numéro, puis choisissez votre code PIN à 4 chiffres."}
+   397→            </p>
+   398→            {lastDigits && (
+   399→              <p className="mt-1 text-xs text-muted-foreground">
+   400→                Compte enregistré se terminant par {lastDigits}
+   401→              </p>
+   402→            )}
+   403→          </div>
+   404→
+   405→          <form onSubmit={submit} className="mt-6 grid gap-4">
+   406→            <div className="grid gap-2">
+   407→              <Label htmlFor="lg-phone">Téléphone (identifiant) *</Label>
+   408→              <Input
+   409→                id="lg-phone"
+   410→                type="tel"
+   411→                value={phone}
+   412→                onChange={(e) => setPhone(e.target.value)}
+   413→                placeholder="+229 01 97 00 00 00"
+   414→                autoComplete="username"
+   415→                className="h-11 rounded-sm border-[#d8d4ca]"
+   416→              />
+   417→            </div>
+   418→
+   419→            <div className="grid gap-2">
+   420→              <Label htmlFor="lg-pin">
+   421→                {hasPin ? "Code PIN *" : "Nouveau code PIN (4 chiffres) *"}
+   422→              </Label>
+   423→              <div className="relative">
+   424→                <Input
+   425→                  id="lg-pin"
+   426→                  type={show ? "text" : "password"}
+   427→                  inputMode="numeric"
+   428→                  maxLength={4}
+   429→                  value={pin}
+   430→                  onChange={(e) => setPinField(e.target.value.replace(/\D/g, ""))}
+   431→                  autoComplete={hasPin ? "current-password" : "new-password"}
+   432→                  className="h-11 rounded-sm border-[#d8d4ca] pr-11 tracking-[0.5em]"
+   433→                />
+   434→                <button
+   435→                  type="button"
+   436→                  aria-label={show ? "Masquer le code" : "Afficher le code"}
+   437→                  onClick={() => setShow((v) => !v)}
+   438→                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8f8f8f] hover:text-[#111111]"
+   439→                >
+   440→                  {show ? (
+   441→                    <EyeOff className="h-4 w-4" aria-hidden="true" />
+   442→                  ) : (
+   443→                    <Eye className="h-4 w-4" aria-hidden="true" />
+   444→                  )}
+   445→                </button>
+   446→              </div>
+   447→            </div>
+   448→
+   449→            {!hasPin && (
+   450→              <>
+   451→                <div className="grid gap-2">
+   452→                  <Label htmlFor="lg-confirm">Confirmer le code PIN *</Label>
+   453→                  <Input
+   454→                    id="lg-confirm"
+   455→                    type="password"
+   456→                    inputMode="numeric"
+   457→                    maxLength={4}
+   458→                    value={confirm}
+   459→                    onChange={(e) =>
+   460→                      setConfirm(e.target.value.replace(/\D/g, ""))
+   461→                    }
+   462→                    autoComplete="new-password"
+   463→                    className="h-11 rounded-sm border-[#d8d4ca] tracking-[0.5em]"
+   464→                  />
+   465→                </div>
+   466→                <div className="grid gap-2">
+   467→                  <Label htmlFor="lg-email">Email de réception *</Label>
+   468→                  <Input
+   469→                    id="lg-email"
+   470→                    type="email"
+   471→                    value={email}
+   472→                    onChange={(e) => setEmail(e.target.value)}
+   473→                    placeholder="vous@exemple.com"
+   474→                    autoComplete="email"
+   475→                    className="h-11 rounded-sm border-[#d8d4ca]"
+   476→                  />
+   477→                  <p className="text-xs text-muted-foreground">
+   478→                    Une copie de vos identifiants (numéro + code PIN) y sera
+   479→                    envoyée.
+   480→                  </p>
+   481→                </div>
+   482→              </>
+   483→            )}
+   484→
+   485→            <Button
+   486→              type="submit"
+   487→              size="lg"
+   488→              className="h-12 rounded-sm bg-[#d4af37] font-extrabold text-[#0b0b0b] hover:bg-[#bfa032]"
+   489→            >
+   490→              {hasPin ? "Déverrouiller mon espace" : "Sécuriser mon compte"}
+   491→            </Button>
+   492→          </form>
+   493→
+   494→          {hasPin && (
+   495→            <button
+   496→              type="button"
+   497→              onClick={forgot}
+   498→              className="mt-3 w-full text-center text-sm font-bold text-[#8a6a14] underline-offset-2 hover:underline"
+   499→            >
+   500→              Identifiants oubliés ? Renvoyer une copie par email
+   501→            </button>
+   502→          )}
+   503→
+   504→          <Separator className="my-5" />
+   505→
+   506→          <p className="text-center text-xs text-muted-foreground">
+   507→            Ce n&apos;est pas votre compte ?{" "}
+   508→            {wipeArmed ? (
+   509→              <button
+   510→                type="button"
+   511→                onClick={wipe}
+   512→                className="font-bold text-[#c6482f] underline"
+   513→              >
+   514→                Confirmer l&apos;effacement
+   515→              </button>
+   516→            ) : (
+   517→              <button
+   518→                type="button"
+   519→                onClick={() => setWipeArmed(true)}
+   520→                className="font-bold underline underline-offset-2 hover:text-[#111111]"
+   521→              >
+   522→                Effacer les données de cet appareil
+   523→              </button>
+   524→            )}
+   525→          </p>
+   526→        </div>
+   527→      </Reveal>
+   528→    </div>
+   529→  );
+   530→}
+   531→
+   532→/* ------------------------------------------------------------------ */
+   533→/* Aperçu                                                              */
+   534→/* ------------------------------------------------------------------ */
+   535→
+   536→function TierBadge({ className }: { className?: string }) {
+   537→  const lifetimePoints = useShop((s) => s.lifetimePoints);
+   538→  const tier = tierFor(lifetimePoints);
+   539→  const Icon = tier.name === "Or" ? Crown : tier.name === "Argent" ? Award : ShieldCheck;
+   540→  return (
+   541→    <span
+   542→      className={`inline-flex items-center gap-1.5 rounded-md border border-[#d4af37]/40 bg-[#f4eeda] px-3 py-1.5 text-sm font-extrabold text-[#8a6a14] ${className ?? ""}`}
+   543→    >
+   544→      <Icon className="h-4 w-4" aria-hidden="true" />
+   545→      Membre {tier.name}
+   546→    </span>
+   547→  );
+   548→}
+   549→
+   550→function Crown({ className, ...props }: React.SVGProps<SVGSVGElement>) {
+   551→  return <Gem className={className} {...props} />;
+   552→}
+   553→
+   554→function OverviewTab() {
+   555→  const customer = useShop((s) => s.customer);
+   556→  const orders = useShop((s) => s.orders);
+   557→  const points = useShop((s) => s.loyaltyPoints);
+   558→  const openAccount = useShop((s) => s.openAccount);
+   559→  const openCatalog = useShop((s) => s.openCatalog);
+   560→
+   561→  const spent = useMemo(
+   562→    () => orders.reduce((sum, o) => sum + o.subtotal, 0),
+   563→    [orders]
+   564→  );
+   565→  const activeWarranties = orders.filter((o) => warrantyActive(o)).length;
+   566→  const goal = cheapestReward();
+   567→  const pct = Math.min(100, Math.round((points / goal.cost) * 100));
+   568→
+   569→  return (
+   570→    <div className="flex flex-col gap-6">
+   571→      {/* Cartes statistiques */}
+   572→      <div className="grid gap-4 sm:grid-cols-3">
+   573→        <PointsCard compact />
+   574→        <Reveal delay={0.05}>
+   575→          <div className="h-full rounded-md border border-[#e6e3db] bg-white p-5">
+   576→            <Package className="h-5 w-5 text-[#d4af37]" aria-hidden="true" />
+   577→            <p className="mt-2 text-2xl font-extrabold text-[#0b0b0b]">
+   578→              {orders.length}
+   579→            </p>
+   580→            <p className="text-sm text-muted-foreground">
+   581→              {orders.length > 1 ? "commandes passées" : "commande passée"}
+   582→            </p>
+   583→          </div>
+   584→        </Reveal>
+   585→        <Reveal delay={0.1}>
+   586→          <div className="h-full rounded-md border border-[#e6e3db] bg-white p-5">
+   587→            <ShieldCheck className="h-5 w-5 text-[#d4af37]" aria-hidden="true" />
+   588→            <p className="mt-2 text-2xl font-extrabold text-[#0b0b0b]">
+   589→              {activeWarranties}
+   590→            </p>
+   591→            <p className="text-sm text-muted-foreground">
+   592→              garantie{activeWarranties > 1 ? "s" : ""} active
+   593→              {activeWarranties > 1 ? "s" : ""}
+   594→            </p>
+   595→          </div>
+   596→        </Reveal>
+   597→      </div>
+   598→
+   599→      {/* Prochaine récompense */}
+   600→      <Reveal>
+   601→        <div className="rounded-md bg-[#141414] p-6 text-white">
+   602→          <div className="flex flex-wrap items-center justify-between gap-3">
+   603→            <p className="flex items-center gap-2 font-extrabold">
+   604→              <Gift className="h-5 w-5 text-[#d4af37]" aria-hidden="true" />
+   605→              Prochaine récompense
+   606→            </p>
+   607→            <p className="text-sm font-bold text-[#d4af37]">
+   608→              {goal.short} à {goal.cost} pts
+   609→            </p>
+   610→          </div>
+   611→          <Progress
+   612→            value={pct}
+   613→            className="mt-4 h-2.5 bg-white/15 [&_[data-slot=progress-indicator]]:bg-[#d4af37]"
+   614→          />
+   615→          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
+   616→            <p className="text-white/80">
+   617→              {points >= goal.cost
+   618→                ? "Récompense disponible — échangez-la !"
+   619→                : `Encore ${goal.cost - points} pts (≈ ${formatFCFA(
+   620→                    Math.ceil(((goal.cost - points) / 5) * 10000)
+   621→                  )} d'achats)`}
+   622→            </p>
+   623→            <Button
+   624→              size="sm"
+   625→              className="rounded-sm bg-[#d4af37] font-extrabold text-[#0b0b0b] hover:bg-[#bfa032]"
+   626→              onClick={() => openAccount("loyalty")}
+   627→            >
+   628→              Ma carte fidélité
+   629→            </Button>
+   630→          </div>
+   631→        </div>
+   632→      </Reveal>
+   633→
+   634→      {/* Dernières commandes */}
+   635→      <section aria-labelledby="ov-orders">
+   636→        <div className="flex items-center justify-between">
+   637→          <h2 id="ov-orders" className="text-lg font-extrabold text-[#0b0b0b]">
+   638→            Dernières commandes
+   639→          </h2>
+   640→          {orders.length > 0 && (
+   641→            <Button
+   642→              variant="ghost"
+   643→              size="sm"
+   644→              className="font-bold text-[#8a6a14] hover:bg-[#f4eeda]"
+   645→              onClick={() => openAccount("orders")}
+   646→            >
+   647→              Tout voir
+   648→            </Button>
+   649→          )}
+   650→        </div>
+   651→        {orders.length === 0 ? (
+   652→          <div className="mt-3 rounded-md border border-dashed border-[#d8d4ca] bg-white p-8 text-center">
+   653→            <ShoppingBasket className="mx-auto h-8 w-8 text-[#8f8f8f]" aria-hidden="true" />
+   654→            <p className="mt-2 font-bold">Aucune commande pour le moment</p>
+   655→            <Button
+   656→              className="mt-4 rounded-sm bg-[#d4af37] font-extrabold hover:bg-[#bfa032]"
+   657→              onClick={() => openCatalog("all")}
+   658→            >
+   659→              Commencer mes achats
+   660→            </Button>
+   661→          </div>
+   662→        ) : (
+   663→          <ul className="mt-3 flex flex-col gap-3">
+   664→            {orders.slice(0, 3).map((o) => (
+   665→              <OrderRow key={o.id} order={o} />
+   666→            ))}
+   667→          </ul>
+   668→        )}
+   669→      </section>
+   670→
+   671→      {/* Rappel profil */}
+   672→      <Reveal>
+   673→        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[#e6e3db] bg-white p-5">
+   674→          <p className="text-sm">
+   675→            <span className="font-extrabold">Bonjour {customer?.name.split(" ")[0]} !</span>{" "}
+   676→            <span className="text-muted-foreground">
+   677→              Vos coordonnées servent à vos livraisons.
+   678→            </span>
+   679→          </p>
+   680→          <Button
+   681→            variant="outline"
+   682→            size="sm"
+   683→            className="rounded-sm border-[#d8d4ca] font-bold"
+   684→            onClick={() => openAccount("settings")}
+   685→          >
+   686→            <Settings className="h-4 w-4" aria-hidden="true" />
+   687→            Modifier mes données
+   688→          </Button>
+   689→        </div>
+   690→      </Reveal>
+   691→    </div>
+   692→  );
+   693→}
+   694→
+   695→/** Carte points — utilisée en compact (aperçu) et pleine (fidélité). */
+   696→function PointsCard({ compact = false }: { compact?: boolean }) {
+   697→  const points = useShop((s) => s.loyaltyPoints);
+   698→  return (
+   699→    <Reveal>
+   700→      <div
+   701→        className={`flex h-full flex-col justify-between rounded-md bg-gradient-to-br from-[#141414] to-[#2b2415] p-5 text-white ${
+   702→          compact ? "" : "sm:p-7"
+   703→        }`}
+   704→      >
+   705→        <div className="flex items-center justify-between">
+   706→          <p className="flex items-center gap-2 text-sm font-bold text-white/70">
+   707→            <Gem className={`text-[#d4af37] ${compact ? "h-4 w-4" : "h-5 w-5"}`} aria-hidden="true" />
+   708→            Carte fidélité
+   709→          </p>
+   710→          <span className="rounded-sm border border-[#d4af37]/50 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[#d4af37]">
+   711→            Maison Cauris
+   712→          </span>
+   713→        </div>
+   714→        <div className="mt-4">
+   715→          <p className={`font-extrabold text-[#d4af37] ${compact ? "text-2xl" : "text-4xl"}`}>
+   716→            {points} pts
+   717→          </p>
+   718→          {!compact && (
+   719→            <p className="mt-1 text-sm text-white/70">
+   720→              10 000 F payés = 5 pts · utilisables en récompenses
+   721→            </p>
+   722→          )}
+   723→        </div>
+   724→      </div>
+   725→    </Reveal>
+   726→  );
+   727→}
+   728→
+   729→/* ------------------------------------------------------------------ */
+   730→/* Commandes                                                           */
+   731→/* ------------------------------------------------------------------ */
+   732→
+   733→const STAGE_STEPS = [
+   734→  { label: "Confirmée", icon: BadgeCheck },
+   735→  { label: "Livraison", icon: Truck },
+   736→  { label: "Livrée", icon: PackageCheck },
+   737→];
+   738→
+   739→function OrderRow({ order }: { order: Order }) {
+   740→  const [open, setOpen] = useState(false);
+   741→  const stage = orderStage(order);
+   742→  const hasWarranty = warrantyActive(order);
+   743→  const end = warrantyEnd(order);
+   744→
+   745→  return (
+   746→    <Reveal>
+   747→      <Collapsible open={open} onOpenChange={setOpen}>
+   748→        <div className="overflow-hidden rounded-md border border-[#e6e3db] bg-white">
+   749→          <CollapsibleTrigger className="flex w-full flex-wrap items-center gap-3 p-4 text-left hover:bg-[#f1efe9]/50">
+   750→            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-[#f4eeda]">
+   751→              <Package className="h-5 w-5 text-[#8a6a14]" aria-hidden="true" />
+   752→            </span>
+   753→            <span className="min-w-0 flex-1">
+   754→              <span className="flex flex-wrap items-center gap-2">
+   755→                <span className="font-extrabold text-[#111111]">{order.id}</span>
+   756→                <Badge
+   757→                  className={`rounded-sm border-0 px-2 py-0.5 text-[11px] font-bold ${
+   758→                    stage.stage === 3
+   759→                      ? "bg-[#eef3ea] text-[#3e6b47]"
+   760→                      : stage.stage === 2
+   761→                        ? "bg-[#f4eeda] text-[#8a6a14]"
+   762→                        : "bg-[#141414] text-white"
+   763→                  }`}
+   764→                >
+   765→                  {stage.label}
+   766→                </Badge>
+   767→                {hasWarranty && (
+   768→                  <Badge className="rounded-sm border border-[#d4af37]/40 bg-white px-2 py-0.5 text-[11px] font-bold text-[#8a6a14]">
+   769→                    <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+   770→                    Garantie
+   771→                  </Badge>
+   772→                )}
+   773→              </span>
+   774→              <span className="mt-0.5 block text-sm text-muted-foreground">
+   775→                {formatDateLong(new Date(order.createdAt))} · {order.lines.length}{" "}
+   776→                article{order.lines.length > 1 ? "s" : ""}
+   777→              </span>
+   778→            </span>
+   779→            <span className="text-right">
+   780→              <span className="block font-extrabold text-[#8a6a14]">
+   781→                {formatFCFA(order.total)}
+   782→              </span>
+   783→              <span className="text-xs text-muted-foreground">
+   784→                +{order.pointsEarned} pts
+   785→              </span>
+   786→            </span>
+   787→            <ChevronDown
+   788→              className={`h-4 w-4 shrink-0 text-[#8f8f8f] transition-transform ${open ? "rotate-180" : ""}`}
+   789→              aria-hidden="true"
+   790→            />
+   791→          </CollapsibleTrigger>
+   792→
+   793→          <CollapsibleContent>
+   794→            <div className="border-t border-[#e6e3db] px-4 pb-4 pt-4">
+   795→              {/* Suivi */}
+   796→              <ol className="flex items-center gap-1" aria-label="Suivi de commande">
+   797→                {STAGE_STEPS.map((s, i) => {
+   798→                  const done = stage.stage >= i + 1;
+   799→                  const Icon = s.icon;
+   800→                  return (
+   801→                    <li key={s.label} className="flex flex-1 flex-col items-center gap-1">
+   802→                      <span className="flex w-full items-center">
+   803→                        <span className={`h-0.5 flex-1 ${i === 0 ? "opacity-0" : done ? "bg-[#d4af37]" : "bg-[#e6e3db]"}`} />
+   804→                        <span
+   805→                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
+   806→                            done ? "bg-[#d4af37] text-[#0b0b0b]" : "bg-[#f1efe9] text-[#8f8f8f]"
+   807→                          }`}
+   808→                        >
+   809→                          <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+   810→                        </span>
+   811→                        <span
+   812→                          className={`h-0.5 flex-1 ${i === STAGE_STEPS.length - 1 ? "opacity-0" : stage.stage > i + 1 ? "bg-[#d4af37]" : "bg-[#e6e3db]"}`}
+   813→                        />
+   814→                      </span>
+   815→                      <span
+   816→                        className={`text-center text-[11px] font-bold ${done ? "text-[#111111]" : "text-[#8f8f8f]"}`}
+   817→                      >
+   818→                        {s.label}
+   819→                      </span>
+   820→                    </li>
+   821→                  );
+   822→                })}
+   823→              </ol>
+   824→              <p className="mt-2 text-center text-xs text-muted-foreground">{stage.hint}</p>
+   825→
+   826→              <Separator className="my-4" />
+   827→
+   828→              {/* Articles */}
+   829→              <ul className="flex flex-col gap-2.5">
+   830→                {order.lines.map((l) => {
+   831→                  const p = getProduct(l.productId);
+   832→                  return (
+   833→                    <li key={l.productId} className="flex items-center gap-3">
+   834→                      {p && (
+   835→                        <SafeImg
+   836→                          src={imgFor(p.imageKeys[0])}
+   837→                          alt=""
+   838→                          className="h-11 w-11 shrink-0 rounded-sm object-cover"
+   839→                        />
+   840→                      )}
+   841→                      <div className="min-w-0 flex-1">
+   842→                        <p className="truncate text-sm font-bold">{l.name}</p>
+   843→                        <p className="text-xs text-muted-foreground">
+   844→                          {l.qty} × {formatFCFA(l.price)}
+   845→                        </p>
+   846→                      </div>
+   847→                      <p className="text-sm font-bold">{formatFCFA(l.price * l.qty)}</p>
+   848→                    </li>
+   849→                  );
+   850→                })}
+   851→              </ul>
+   852→
+   853→              {/* Détails */}
+   854→              <div className="mt-4 grid gap-3 rounded-sm bg-[#f1efe9]/60 p-4 text-sm sm:grid-cols-2">
+   855→                <p className="flex items-start gap-2">
+   856→                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#8a6a14]" aria-hidden="true" />
+   857→                  <span>
+   858→                    {order.address}
+   859→                    {order.district ? `, ${order.district}` : ""} — {order.city}
+   860→                  </span>
+   861→                </p>
+   862→                <p className="flex items-start gap-2">
+   863→                  <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-[#8a6a14]" aria-hidden="true" />
+   864→                  <span>{order.paymentLabel}</span>
+   865→                </p>
+   866→                <p className="flex items-start gap-2">
+   867→                  <Gem className="mt-0.5 h-4 w-4 shrink-0 text-[#8a6a14]" aria-hidden="true" />
+   868→                  <span>
+   869→                    +{order.pointsEarned} pts
+   870→                    {order.rewardUsed ? ` · ${order.rewardUsed.label} (−${order.rewardUsed.cost} pts)` : ""}
+   871→                  </span>
+   872→                </p>
+   873→                <p className="flex items-start gap-2">
+   874→                  <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-[#8a6a14]" aria-hidden="true" />
+   875→                  <span>
+   876→                    Garantie :{" "}
+   877→                    {hasWarranty ? (
+   878→                      <span className="font-bold text-[#3e6b47]">
+   879→                        active jusqu&apos;au {formatDateLong(end)}
+   880→                      </span>
+   881→                    ) : (
+   882→                      "expirée"
+   883→                    )}
+   884→                  </span>
+   885→                </p>
+   886→              </div>
+   887→
+   888→              {order.discount > 0 && (
+   889→                <p className="mt-3 text-sm text-muted-foreground">
+   890→                  Sous-total {formatFCFA(order.subtotal)} · Réduction{" "}
+   891→                  <span className="font-bold text-[#8a6a14]">−{formatFCFA(order.discount)}</span>{" "}
+   892→                  · Livraison {order.shipping === 0 ? "offerte" : formatFCFA(order.shipping)}
+   893→                </p>
+   894→              )}
+   895→
+   896→              {/* Actions */}
+   897→              <div className="mt-4 flex flex-wrap gap-2">
+   898→                <ReorderButton order={order} />
+   899→                <Button variant="outline" size="sm" className="rounded-sm border-[#d8d4ca] font-bold" asChild>
+   900→                  <a href={WHATSAPP} target="_blank" rel="noreferrer">
+   901→                    <Headset className="h-4 w-4" aria-hidden="true" />
+   902→                    SAV / garantie
+   903→                  </a>
+   904→                </Button>
+   905→                <CopyIdButton orderId={order.id} />
+   906→              </div>
+   907→            </div>
+   908→          </CollapsibleContent>
+   909→        </div>
+   910→      </Collapsible>
+   911→    </Reveal>
+   912→  );
+   913→}
+   914→
+   915→function ReorderButton({ order }: { order: Order }) {
+   916→  const addToCart = useShop((s) => s.addToCart);
+   917→  const available = order.lines.filter((l) => getProduct(l.productId));
+   918→
+   919→  const reorder = () => {
+   920→    available.forEach((l) => addToCart(l.productId, l.qty));
+   921→    toast({
+   922→      title: "Ajouté au panier",
+   923→      description: `${available.reduce((n, l) => n + l.qty, 0)} article(s) de ${order.id}.`,
+   924→    });
+   925→  };
+   926→
+   927→  return (
+   928→    <Button
+   929→      size="sm"
+   930→      className="rounded-sm bg-[#141414] font-extrabold hover:bg-[#2e2e2e]"
+   931→      onClick={reorder}
+   932→      disabled={available.length === 0}
+   933→    >
+   934→      <RefreshCcw className="h-4 w-4" aria-hidden="true" />
+   935→      Recommander
+   936→    </Button>
+   937→  );
+   938→}
+   939→
+   940→function CopyIdButton({ orderId }: { orderId: string }) {
+   941→  const copy = async () => {
+   942→    try {
+   943→      await navigator.clipboard.writeText(orderId);
+   944→      toast({ title: "Numéro copié", description: orderId });
+   945→    } catch {
+   946→      toast({ title: "Copie impossible", description: orderId });
+   947→    }
+   948→  };
+   949→  return (
+   950→    <Button variant="ghost" size="sm" className="font-bold text-[#3d3d3d] hover:bg-[#f1efe9]" onClick={copy}>
+   951→      <Copy className="h-4 w-4" aria-hidden="true" />
+   952→      Copier le nº
+   953→    </Button>
+   954→  );
+   955→}
+   956→
+   957→function OrdersTab() {
+   958→  const orders = useShop((s) => s.orders);
+   959→  const openCatalog = useShop((s) => s.openCatalog);
+   960→
+   961→  if (orders.length === 0) {
+   962→    return (
+   963→      <div className="rounded-md border border-dashed border-[#d8d4ca] bg-white p-10 text-center">
+   964→        <Package className="mx-auto h-10 w-10 text-[#8f8f8f]" aria-hidden="true" />
+   965→        <p className="mt-3 text-lg font-extrabold">Aucune commande</p>
+   966→        <p className="mt-1 text-sm text-muted-foreground">
+   967→          Vos commandes apparaîtront ici avec leur suivi et leur garantie.
+   968→        </p>
+   969→        <Button
+   970→          className="mt-5 rounded-sm bg-[#d4af37] font-extrabold hover:bg-[#bfa032]"
+   971→          onClick={() => openCatalog("all")}
+   972→        >
+   973→          Découvrir le catalogue
+   974→        </Button>
+   975→      </div>
+   976→    );
+   977→  }
+   978→
+   979→  return (
+   980→    <div className="flex flex-col gap-3">
+   981→      <p className="text-sm text-muted-foreground">
+   982→        {orders.length} commande{orders.length > 1 ? "s" : ""} · garantie 90 jours sur chaque achat
+   983→      </p>
+   984→      {orders.map((o) => (
+   985→        <OrderRow key={o.id} order={o} />
+   986→      ))}
+   987→    </div>
+   988→  );
+   989→}
+   990→
+   991→/* ------------------------------------------------------------------ */
+   992→/* Fidélité                                                            */
+   993→/* ------------------------------------------------------------------ */
+   994→
+   995→function LoyaltyTab() {
+   996→  const points = useShop((s) => s.loyaltyPoints);
+   997→  const lifetimePoints = useShop((s) => s.lifetimePoints);
+   998→  const orders = useShop((s) => s.orders);
+   999→  const activeReward = useShop((s) => s.activeReward);
+  1000→  const setActiveReward = useShop((s) => s.setActiveReward);
+  1001→  const openCatalog = useShop((s) => s.openCatalog);
+  1002→
+  1003→  const tier = tierFor(lifetimePoints);
+  1004→  const next = nextTier(lifetimePoints);
+  1005→  const tierPct = next
+  1006→    ? Math.min(100, Math.round(((lifetimePoints - tier.min) / (next.min - tier.min)) * 100))
+  1007→    : 100;
+  1008→
+  1009→  const exchange = (r: Reward) => {
+  1010→    if (activeReward?.id === r.id) {
+  1011→      setActiveReward(null);
+  1012→      toast({ title: "Récompense retirée", description: "Vos points restent intacts." });
+  1013→      return;
+  1014→    }
+  1015→    if (points < r.cost) return;
+  1016→    setActiveReward(r);
+  1017→    toast({
+  1018→      title: `${r.label} activée`,
+  1019→      description: "Appliquée automatiquement à votre prochaine commande.",
+  1020→    });
+  1021→  };
+  1022→
+  1023→  return (
+  1024→    <div className="flex flex-col gap-6">
+  1025→      <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
+  1026→        <PointsCard />
+  1027→
+  1028→        {/* Règles du programme */}
+  1029→        <Reveal direction="right">
+  1030→          <div className="h-full rounded-md border border-[#e6e3db] bg-white p-5 sm:p-7">
+  1031→            <h2 className="flex items-center gap-2 font-extrabold text-[#0b0b0b]">
+  1032→              <Sparkles className="h-5 w-5 text-[#d4af37]" aria-hidden="true" />
+  1033→              Comment ça marche
+  1034→            </h2>
+  1035→            <ul className="mt-4 flex flex-col gap-3 text-sm">
+  1036→              <li className="flex items-center gap-3">
+  1037→                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-[#f4eeda] font-extrabold text-[#8a6a14]">
+  1038→                  10k
+  1039→                </span>
+  1040→                Chaque tranche de 10 000 F payés rapporte <b>5 pts</b>
+  1041→              </li>
+  1042→              <li className="flex items-center gap-3">
+  1043→                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-[#f4eeda] font-extrabold text-[#8a6a14]">
+  1044→                  100
+  1045→                </span>
+  1046→                100 pts = <b>−5 %</b> sur une commande
+  1047→              </li>
+  1048→              <li className="flex items-center gap-3">
+  1049→                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-[#f4eeda] font-extrabold text-[#8a6a14]">
+  1050→                  80
+  1051→                </span>
+  1052→                80 pts = <b>−7 000 FCFA</b> sur une commande
+  1053→              </li>
+  1054→            </ul>
+  1055→          </div>
+  1056→        </Reveal>
+  1057→      </div>
+  1058→
+  1059→      {/* Récompenses */}
+  1060→      <section aria-labelledby="rewards-title">
+  1061→        <h2 id="rewards-title" className="text-lg font-extrabold text-[#0b0b0b]">
+  1062→          Mes récompenses
+  1063→        </h2>
+  1064→        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+  1065→          {REWARDS.map((r) => {
+  1066→            const armed = activeReward?.id === r.id;
+  1067→            const affordable = points >= r.cost;
+  1068→            return (
+  1069→              <div
+  1070→                key={r.id}
+  1071→                className={`rounded-md border p-5 transition-colors ${
+  1072→                  armed
+  1073→                    ? "border-[#d4af37] bg-[#f4eeda]/60"
+  1074→                    : "border-[#e6e3db] bg-white"
+  1075→                }`}
+  1076→              >
+  1077→                <div className="flex items-start justify-between gap-3">
+  1078→                  <span className="flex h-11 w-11 items-center justify-center rounded-sm bg-[#141414]">
+  1079→                    <Gift className="h-5 w-5 text-[#d4af37]" aria-hidden="true" />
+  1080→                  </span>
+  1081→                  <Badge
+  1082→                    className={`rounded-sm border-0 font-extrabold ${
+  1083→                      affordable ? "bg-[#f4eeda] text-[#8a6a14]" : "bg-[#f1efe9] text-[#8f8f8f]"
+  1084→                    }`}
+  1085→                  >
+  1086→                    {r.cost} pts
+  1087→                  </Badge>
+  1088→                </div>
+  1089→                <p className="mt-3 text-lg font-extrabold text-[#111111]">{rewardLabel(r)}</p>
+  1090→                <p className="text-sm text-muted-foreground">{r.label}</p>
+  1091→                <Button
+  1092→                  className={`mt-4 w-full rounded-sm font-extrabold ${
+  1093→                    armed
+  1094→                      ? "bg-white text-[#8a6a14] border border-[#d4af37] hover:bg-[#f4eeda]"
+  1095→                      : affordable
+  1096→                        ? "bg-[#d4af37] text-[#0b0b0b] hover:bg-[#bfa032]"
+  1097→                        : "bg-[#f1efe9] text-[#8f8f8f]"
+  1098→                  }`}
+  1099→                  disabled={!armed && !affordable}
+  1100→                  onClick={() => exchange(r)}
+  1101→                >
+  1102→                  {!armed && !affordable
+  1103→                    ? `Encore ${r.cost - points} pts`
+  1104→                    : armed
+  1105→                      ? "Retirer de ma commande"
+  1106→                      : "Échanger mes points"}
+  1107→                </Button>
+  1108→                {armed && (
+  1109→                  <p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-[#8a6a14]">
+  1110→                    <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
+  1111→                    Appliquée au checkout
+  1112→                  </p>
+  1113→                )}
+  1114→              </div>
+  1115→            );
+  1116→          })}
+  1117→        </div>
+  1118→      </section>
+  1119→
+  1120→      {/* Palier membre */}
+  1121→      <Reveal>
+  1122→        <div className="rounded-md border border-[#e6e3db] bg-white p-5">
+  1123→          <div className="flex flex-wrap items-center justify-between gap-2">
+  1124→            <p className="flex items-center gap-2 font-extrabold">
+  1125→              <Award className="h-5 w-5 text-[#d4af37]" aria-hidden="true" />
+  1126→              Statut {tier.name}
+  1127→            </p>
+  1128→            <p className="text-sm text-muted-foreground">
+  1129→              {next
+  1130→                ? `${next.min - lifetimePoints} pts pour devenir ${next.name}`
+  1131→                : "Rang maximum atteint !"}
+  1132→            </p>
+  1133→          </div>
+  1134→          <Progress
+  1135→            value={tierPct}
+  1136→            className="mt-3 h-2 bg-[#f1efe9] [&_[data-slot=progress-indicator]]:bg-[#d4af37]"
+  1137→          />
+  1138→        </div>
+  1139→      </Reveal>
+  1140→
+  1141→      {/* Historique des points */}
+  1142→      <section aria-labelledby="pts-history">
+  1143→        <h2 id="pts-history" className="text-lg font-extrabold text-[#0b0b0b]">
+  1144→          Historique des points
+  1145→        </h2>
+  1146→        {orders.length === 0 ? (
+  1147→          <div className="mt-3 rounded-md border border-dashed border-[#d8d4ca] bg-white p-8 text-center">
+  1148→            <p className="font-bold">Vos points apparaîtront après votre première commande.</p>
+  1149→            <Button
+  1150→              className="mt-4 rounded-sm bg-[#d4af37] font-extrabold hover:bg-[#bfa032]"
+  1151→              onClick={() => openCatalog("all")}
+  1152→            >
+  1153→              Faire mes premiers points
+  1154→            </Button>
+  1155→          </div>
+  1156→        ) : (
+  1157→          <ul className="mt-3 overflow-hidden rounded-md border border-[#e6e3db] bg-white">
+  1158→            {orders.map((o) => (
+  1159→              <li
+  1160→                key={o.id}
+  1161→                className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e6e3db] px-4 py-3 last:border-b-0"
+  1162→              >
+  1163→                <div>
+  1164→                  <p className="text-sm font-bold">{o.id}</p>
+  1165→                  <p className="text-xs text-muted-foreground">
+  1166→                    {formatDateLong(new Date(o.createdAt))}
+  1167→                    {o.rewardUsed ? ` · ${o.rewardUsed.label}` : ""}
+  1168→                  </p>
+  1169→                </div>
+  1170→                <div className="flex items-center gap-2 text-sm font-extrabold">
+  1171→                  {o.rewardUsed && (
+  1172→                    <span className="text-[#c6482f]">−{o.rewardUsed.cost} pts</span>
+  1173→                  )}
+  1174→                  <span className="text-[#3e6b47]">+{o.pointsEarned} pts</span>
+  1175→                </div>
+  1176→              </li>
+  1177→            ))}
+  1178→          </ul>
+  1179→        )}
+  1180→      </section>
+  1181→    </div>
+  1182→  );
+  1183→}
+  1184→
+  1185→/* ------------------------------------------------------------------ */
+  1186→/* Paramètres                                                          */
+  1187→/* ------------------------------------------------------------------ */
+  1188→
+  1189→const CITIES = [
+  1190→  "Cotonou",
+  1191→  "Porto-Novo",
+  1192→  "Abomey-Calavi",
+  1193→  "Sèmè-Podji",
+  1194→  "Akpro-Missérété",
+  1195→  "Ouidah",
+  1196→  "Bohicon",
+  1197→  "Abomey",
+  1198→  "Parakou",
+  1199→  "Djougou",
+  1200→  "Natitingou",
+  1201→  "Kandi",
+  1202→  "Autre ville",
+  1203→];
+  1204→
+  1205→function SettingsTab() {
+  1206→  const customer = useShop((s) => s.customer);
+  1207→  const saveCustomer = useShop((s) => s.saveCustomer);
+  1208→  const isCreating = !customer;
+  1209→
+  1210→  const [form, setForm] = useState<Customer>({
+  1211→    name: customer?.name ?? "",
+  1212→    phone: customer?.phone ?? "",
+  1213→    email: customer?.email ?? "",
+  1214→    city: customer?.city ?? "Cotonou",
+  1215→    district: customer?.district ?? "",
+  1216→    address: customer?.address ?? "",
+  1217→    defaultPayment: customer?.defaultPayment ?? "mtn_momo",
+  1218→    notifyWhatsApp: customer?.notifyWhatsApp ?? true,
+  1219→  });
+  1220→
+  1221→  const set = <K extends keyof Customer>(key: K, value: Customer[K]) =>
+  1222→    setForm((f) => ({ ...f, [key]: value }));
+  1223→
+  1224→  const save = (e: React.FormEvent) => {
+  1225→    e.preventDefault();
+  1226→    if (!form.name.trim() || !form.phone.trim()) {
+  1227→      toast({
+  1228→        title: "Informations incomplètes",
+  1229→        description: "Le nom et le téléphone sont requis.",
+  1230→        variant: "destructive",
+  1231→      });
+  1232→      return;
+  1233→    }
+  1234→    saveCustomer({ ...form, name: form.name.trim(), phone: form.phone.trim() });
+  1235→    toast({
+  1236→      title: isCreating ? "Compte créé !" : "Profil mis à jour",
+  1237→      description: isCreating
+  1238→        ? "Vos prochaines commandes seront préremplies."
+  1239→        : "Vos préférences sont enregistrées.",
+  1240→    });
+  1241→  };
+  1242→
+  1243→  return (
+  1244→    <div className="flex flex-col gap-6">
+  1245→      <form onSubmit={save} className="flex flex-col gap-6" noValidate={false}>
+  1246→      {/* Profil */}
+  1247→      <section aria-labelledby="st-profile" className="rounded-md border border-[#e6e3db] bg-white p-5 sm:p-6">
+  1248→        <h2 id="st-profile" className="flex items-center gap-2 text-lg font-extrabold text-[#8a6a14]">
+  1249→          <UserRound className="h-5 w-5" aria-hidden="true" />
+  1250→          Mes coordonnées
+  1251→        </h2>
+  1252→        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+  1253→          <div className="grid gap-2">
+  1254→            <Label htmlFor="st-name">Nom complet *</Label>
+  1255→            <Input id="st-name" value={form.name} onChange={(e) => set("name", e.target.value)} className="h-11 rounded-sm border-[#d8d4ca]" autoComplete="name" />
+  1256→          </div>
+  1257→          <div className="grid gap-2">
+  1258→            <Label htmlFor="st-phone">Téléphone (WhatsApp) *</Label>
+  1259→            <Input id="st-phone" type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} className="h-11 rounded-sm border-[#d8d4ca]" autoComplete="tel" placeholder="+229 01 97 00 00 00" />
+  1260→          </div>
+  1261→          <div className="grid gap-2 sm:col-span-2">
+  1262→            <Label htmlFor="st-email">E-mail</Label>
+  1263→            <Input id="st-email" type="email" value={form.email ?? ""} onChange={(e) => set("email", e.target.value)} className="h-11 rounded-sm border-[#d8d4ca]" autoComplete="email" placeholder="vous@exemple.com" />
+  1264→          </div>
+  1265→        </div>
+  1266→      </section>
+  1267→
+  1268→      {/* Adresse par défaut */}
+  1269→      <section aria-labelledby="st-address" className="rounded-md border border-[#e6e3db] bg-white p-5 sm:p-6">
+  1270→        <h2 id="st-address" className="flex items-center gap-2 text-lg font-extrabold text-[#8a6a14]">
+  1271→          <MapPin className="h-5 w-5" aria-hidden="true" />
+  1272→          Adresse de livraison par défaut
+  1273→        </h2>
+  1274→        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+  1275→          <div className="grid gap-2">
+  1276→            <Label htmlFor="st-city">Ville</Label>
+  1277→            <Select value={form.city} onValueChange={(v) => set("city", v)}>
+  1278→              <SelectTrigger id="st-city" className="h-11 rounded-sm border-[#d8d4ca]">
+  1279→                <SelectValue />
+  1280→              </SelectTrigger>
+  1281→              <SelectContent>
+  1282→                {CITIES.map((c) => (
+  1283→                  <SelectItem key={c} value={c}>{c}</SelectItem>
+  1284→                ))}
+  1285→              </SelectContent>
+  1286→            </Select>
+  1287→          </div>
+  1288→          <div className="grid gap-2">
+  1289→            <Label htmlFor="st-district">Quartier</Label>
+  1290→            <Input id="st-district" value={form.district ?? ""} onChange={(e) => set("district", e.target.value)} className="h-11 rounded-sm border-[#d8d4ca]" placeholder="Ex. Cadjèhoun" />
+  1291→          </div>
+  1292→          <div className="grid gap-2 sm:col-span-2">
+  1293→            <Label htmlFor="st-address-input">Adresse</Label>
+  1294→            <Input id="st-address-input" value={form.address ?? ""} onChange={(e) => set("address", e.target.value)} className="h-11 rounded-sm border-[#d8d4ca]" placeholder="Ex. Rue 12.084, maison bleue" autoComplete="street-address" />
+  1295→          </div>
+  1296→        </div>
+  1297→      </section>
+  1298→
+  1299→      {/* Préférences */}
+  1300→      <section aria-labelledby="st-prefs" className="rounded-md border border-[#e6e3db] bg-white p-5 sm:p-6">
+  1301→        <h2 id="st-prefs" className="flex items-center gap-2 text-lg font-extrabold text-[#8a6a14]">
+  1302→          <Settings className="h-5 w-5" aria-hidden="true" />
+  1303→          Préférences
+  1304→        </h2>
+  1305→        <div className="mt-4 grid gap-4">
+  1306→          <div className="grid gap-2 sm:max-w-xs">
+  1307→            <Label htmlFor="st-payment">Paiement par défaut</Label>
+  1308→            <Select value={form.defaultPayment} onValueChange={(v) => set("defaultPayment", v as Customer["defaultPayment"])}>
+  1309→              <SelectTrigger id="st-payment" className="h-11 rounded-sm border-[#d8d4ca]">
+  1310→                <SelectValue />
+  1311→              </SelectTrigger>
+  1312→              <SelectContent>
+  1313→                {[
+  1314→                  { id: "mtn_momo", label: "MTN MoMo" },
+  1315→                  { id: "moov_money", label: "Moov Money" },
+  1316→                  { id: "celtiis_cash", label: "Celtiis Cash" },
+  1317→                  { id: "card", label: "Carte bancaire" },
+  1318→                  { id: "cash_on_delivery", label: "Espèces à la livraison" },
+  1319→                ].map((m) => (
+  1320→                  <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
+  1321→                ))}
+  1322→              </SelectContent>
+  1323→            </Select>
+  1324→          </div>
+  1325→          <div className="flex items-center justify-between gap-4 rounded-sm bg-[#f1efe9]/60 p-4 sm:max-w-md">
+  1326→            <div>
+  1327→              <p className="text-sm font-bold">Suivi par WhatsApp</p>
+  1328→              <p className="text-xs text-muted-foreground">
+  1329→                Confirmation et livraison via WhatsApp.
+  1330→              </p>
+  1331→            </div>
+  1332→            <Switch
+  1333→              checked={form.notifyWhatsApp ?? true}
+  1334→              onCheckedChange={(v) => set("notifyWhatsApp", v)}
+  1335→              aria-label="Recevoir le suivi de commande par WhatsApp"
+  1336→            />
+  1337→          </div>
+  1338→        </div>
+  1339→      </section>
+  1340→
+  1341→      <div className="flex flex-wrap items-center gap-3">
+  1342→        <Button type="submit" size="lg" className="h-12 rounded-sm bg-[#d4af37] px-8 font-extrabold hover:bg-[#bfa032]">
+  1343→          <BadgeCheck className="h-5 w-5" aria-hidden="true" />
+  1344→          {isCreating ? "Créer mon compte" : "Enregistrer"}
+  1345→        </Button>
+  1346→        {isCreating && (
+  1347→          <p className="text-sm text-muted-foreground">
+  1348→            Ou commandez directement : le compte se crée tout seul.
+  1349→          </p>
+  1350→        )}
+  1351→      </div>
+  1352→
+  1353→      </form>
+  1354→
+  1355→      {/* Sécurité — identifiant, code PIN, copie email, session */}
+  1356→      {!isCreating && <SecuritySection />}
+  1357→
+  1358→      {/* Danger — uniquement si un compte existe */}
+  1359→      {!isCreating && <DangerZone />}
+  1360→    </div>
+  1361→  );
+  1362→}
+  1363→
+  1364→/* ------------------------------------------------------------------ */
+  1365→/* Sécurité — identifiants de connexion, code PIN, session             */
+  1366→/* ------------------------------------------------------------------ */
+  1367→
+  1368→function SecuritySection() {
+  1369→  const customer = useShop((s) => s.customer);
+  1370→  const pin = useShop((s) => s.pin);
+  1371→  const pinSetAt = useShop((s) => s.pinSetAt);
+  1372→  const credentialsSentTo = useShop((s) => s.credentialsSentTo);
+  1373→  const sessionActive = useShop((s) => s.sessionActive);
+  1374→  const setPin = useShop((s) => s.setPin);
+  1375→  const saveCustomer = useShop((s) => s.saveCustomer);
+  1376→  const resendCredentials = useShop((s) => s.resendCredentials);
+  1377→  const logout = useShop((s) => s.logout);
+  1378→
+  1379→  const [mode, setMode] = useState<"closed" | "setup" | "change">("closed");
+  1380→  const [current, setCurrent] = useState("");
+  1381→  const [next, setNext] = useState("");
+  1382→  const [confirm, setConfirm] = useState("");
+  1383→  const [email, setEmail] = useState(customer?.email ?? "");
+  1384→  const [show, setShow] = useState(false);
+  1385→
+  1386→  if (!customer) return null;
+  1387→
+  1388→  const submit = (e: React.FormEvent) => {
+  1389→    e.preventDefault();
+  1390→    if (mode === "change" && current !== pin) {
+  1391→      toast({
+  1392→        title: "Code actuel incorrect",
+  1393→        description: "Vérifiez votre code PIN actuel.",
+  1394→        variant: "destructive",
+  1395→      });
+  1396→      return;
+  1397→    }
+  1398→    if (!isValidPin(next)) {
+  1399→      toast({
+  1400→        title: "Code PIN invalide",
+  1401→        description: "Choisissez exactement 4 chiffres.",
+  1402→        variant: "destructive",
+  1403→      });
+  1404→      return;
+  1405→    }
+  1406→    if (next !== confirm) {
+  1407→      toast({
+  1408→        title: "Codes différents",
+  1409→        description: "La confirmation ne correspond pas.",
+  1410→        variant: "destructive",
+  1411→      });
+  1412→      return;
+  1413→    }
+  1414→    const mail = email.trim();
+  1415→    if (!isValidEmail(mail)) {
+  1416→      toast({
+  1417→        title: "Email requis",
+  1418→        description: "La copie de vos identifiants y sera envoyée.",
+  1419→        variant: "destructive",
+  1420→      });
+  1421→      return;
+  1422→    }
+  1423→    if (mail !== (customer.email ?? "")) {
+  1424→      saveCustomer({ ...customer, email: mail });
+  1425→    }
+  1426→    setPin(next);
+  1427→    setMode("closed");
+  1428→    setCurrent("");
+  1429→    setNext("");
+  1430→    setConfirm("");
+  1431→    toast({
+  1432→      title: mode === "change" ? "Code PIN modifié" : "Code PIN défini",
+  1433→      description: `Copie des identifiants envoyée à ${mail}.`,
+  1434→    });
+  1435→  };
+  1436→
+  1437→  const resend = () => {
+  1438→    const mail = resendCredentials();
+  1439→    if (mail) {
+  1440→      toast({
+  1441→        title: "Copie renvoyée",
+  1442→        description: `Identifiants renvoyés à ${mail}.`,
+  1443→      });
+  1444→    } else {
+  1445→      toast({
+  1446→        title: "Aucun email enregistré",
+  1447→        description: "Ajoutez un email dans « Mes coordonnées ».",
+  1448→        variant: "destructive",
+  1449→      });
+  1450→    }
+  1451→  };
+  1452→
+  1453→  return (
+  1454→    <section
+  1455→      aria-labelledby="st-security"
+  1456→      className="rounded-md border border-[#e6e3db] bg-white p-5 sm:p-6"
+  1457→    >
+  1458→      <h2
+  1459→        id="st-security"
+  1460→        className="flex items-center gap-2 text-lg font-extrabold text-[#8a6a14]"
+  1461→      >
+  1462→        <KeyRound className="h-5 w-5" aria-hidden="true" />
+  1463→        Sécurité
+  1464→      </h2>
+  1465→      <p className="mt-1 text-sm text-muted-foreground">
+  1466→        Identifiant : votre numéro de téléphone · code PIN à 4 chiffres choisi
+  1467→        par vous · copie des identifiants envoyée par email.
+  1468→      </p>
+  1469→
+  1470→      <div className="mt-4">
+  1471→        {/* Identifiant de connexion */}
+  1472→        <div className="flex flex-wrap items-center justify-between gap-3 py-3.5">
+  1473→          <div className="flex items-center gap-3">
+  1474→            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-[#f4eeda]">
+  1475→              <Phone className="h-4 w-4 text-[#8a6a14]" aria-hidden="true" />
+  1476→            </span>
+  1477→            <div>
+  1478→              <p className="text-sm font-extrabold text-[#111111]">
+  1479→                Identifiant de connexion
+  1480→              </p>
+  1481→              <p className="text-xs text-muted-foreground">
+  1482→                Votre numéro de téléphone
+  1483→              </p>
+  1484→            </div>
+  1485→          </div>
+  1486→          <p className="font-bold text-[#111111]">{customer.phone}</p>
+  1487→        </div>
+  1488→
+  1489→        {/* Code PIN */}
+  1490→        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#e6e3db] py-3.5">
+  1491→          <div className="flex items-center gap-3">
+  1492→            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-[#f4eeda]">
+  1493→              <KeyRound className="h-4 w-4 text-[#8a6a14]" aria-hidden="true" />
+  1494→            </span>
+  1495→            <div>
+  1496→              <p className="text-sm font-extrabold text-[#111111]">
+  1497→                Code PIN à 4 chiffres
+  1498→              </p>
+  1499→              <p className="text-xs text-muted-foreground">
+  1500→                {pin
+  1501→                  ? `Défini le ${pinSetAt ? formatDateLong(new Date(pinSetAt)) : "—"}`
+  1502→                  : "Pas encore défini — sécurisez votre compte"}
+  1503→              </p>
+  1504→            </div>
+  1505→          </div>
+  1506→          {pin ? (
+  1507→            <Button
+  1508→              variant="outline"
+  1509→              size="sm"
+  1510→              className="rounded-sm border-[#d8d4ca] font-bold"
+  1511→              onClick={() => setMode(mode === "change" ? "closed" : "change")}
+  1512→            >
+  1513→              Changer
+  1514→            </Button>
+  1515→          ) : (
+  1516→            <Button
+  1517→              size="sm"
+  1518→              className="rounded-sm bg-[#d4af37] font-extrabold text-[#0b0b0b] hover:bg-[#bfa032]"
+  1519→              onClick={() => setMode("setup")}
+  1520→            >
+  1521→              Définir mon code PIN
+  1522→            </Button>
+  1523→          )}
+  1524→        </div>
+  1525→
+  1526→        {/* Copie des identifiants par email */}
+  1527→        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#e6e3db] py-3.5">
+  1528→          <div className="flex items-center gap-3">
+  1529→            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-[#f4eeda]">
+  1530→              <MailCheck className="h-4 w-4 text-[#8a6a14]" aria-hidden="true" />
+  1531→            </span>
+  1532→            <div>
+  1533→              <p className="text-sm font-extrabold text-[#111111]">
+  1534→                Copie des identifiants par email
+  1535→              </p>
+  1536→              <p className="text-xs text-muted-foreground">
+  1537→                {credentialsSentTo
+  1538→                  ? `Envoyée à ${credentialsSentTo}`
+  1539→                  : customer.email
+  1540→                    ? `Sera envoyée à ${customer.email}`
+  1541→                    : "Aucun email enregistré"}
+  1542→              </p>
+  1543→            </div>
+  1544→          </div>
+  1545→          {pin && (
+  1546→            <Button
+  1547→              variant="outline"
+  1548→              size="sm"
+  1549→              className="rounded-sm border-[#d8d4ca] font-bold"
+  1550→              onClick={resend}
+  1551→            >
+  1552→              Renvoyer
+  1553→            </Button>
+  1554→          )}
+  1555→        </div>
+  1556→
+  1557→        {/* Session */}
+  1558→        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#e6e3db] py-3.5">
+  1559→          <div className="flex items-center gap-3">
+  1560→            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-[#f4eeda]">
+  1561→              <LockKeyhole
+  1562→                className="h-4 w-4 text-[#8a6a14]"
+  1563→                aria-hidden="true"
+  1564→              />
+  1565→            </span>
+  1566→            <div>
+  1567→              <p className="text-sm font-extrabold text-[#111111]">Session</p>
+  1568→              <p className="text-xs text-muted-foreground">
+  1569→                {sessionActive
+  1570→                  ? "Déverrouillée sur cet appareil"
+  1571→                  : "Verrouillée"}
+  1572→              </p>
+  1573→            </div>
+  1574→          </div>
+  1575→          {sessionActive && (
+  1576→            <Button
+  1577→              variant="outline"
+  1578→              size="sm"
+  1579→              className="rounded-sm border-[#c6482f]/40 font-bold text-[#c6482f] hover:bg-[#f8e2dc]"
+  1580→              onClick={() => {
+  1581→                logout();
+  1582→                toast({
+  1583→                  title: "Déconnecté",
+  1584→                  description: "Votre espace client est verrouillé.",
+  1585→                });
+  1586→              }}
+  1587→            >
+  1588→              <LogOut className="h-4 w-4" aria-hidden="true" />
+  1589→              Se déconnecter
+  1590→            </Button>
+  1591→          )}
+  1592→        </div>
+  1593→      </div>
+  1594→
+  1595→      {mode !== "closed" && (
+  1596→        <form
+  1597→          onSubmit={submit}
+  1598→          className="mt-2 grid gap-3 rounded-sm bg-[#f1efe9]/60 p-4 sm:max-w-md"
+  1599→        >
+  1600→          <p className="text-sm font-extrabold text-[#111111]">
+  1601→            {mode === "change"
+  1602→              ? "Changer mon code PIN"
+  1603→              : "Définir mon code PIN"}
+  1604→          </p>
+  1605→          {mode === "change" && (
+  1606→            <div className="grid gap-2">
+  1607→              <Label htmlFor="sec-current">Code PIN actuel *</Label>
+  1608→              <Input
+  1609→                id="sec-current"
+  1610→                type="password"
+  1611→                inputMode="numeric"
+  1612→                maxLength={4}
+  1613→                value={current}
+  1614→                onChange={(e) => setCurrent(e.target.value.replace(/\D/g, ""))}
+  1615→                autoComplete="current-password"
+  1616→                className="h-11 rounded-sm border-[#d8d4ca] tracking-[0.5em]"
+  1617→              />
+  1618→            </div>
+  1619→          )}
+  1620→          <div className="grid gap-2">
+  1621→            <Label htmlFor="sec-next">
+  1622→              {mode === "change"
+  1623→                ? "Nouveau code PIN *"
+  1624→                : "Code PIN (4 chiffres) *"}
+  1625→            </Label>
+  1626→            <div className="relative">
+  1627→              <Input
+  1628→                id="sec-next"
+  1629→                type={show ? "text" : "password"}
+  1630→                inputMode="numeric"
+  1631→                maxLength={4}
+  1632→                value={next}
+  1633→                onChange={(e) => setNext(e.target.value.replace(/\D/g, ""))}
+  1634→                autoComplete="new-password"
+  1635→                className="h-11 rounded-sm border-[#d8d4ca] pr-11 tracking-[0.5em]"
+  1636→              />
+  1637→              <button
+  1638→                type="button"
+  1639→                aria-label={show ? "Masquer le code" : "Afficher le code"}
+  1640→                onClick={() => setShow((v) => !v)}
+  1641→                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8f8f8f] hover:text-[#111111]"
+  1642→              >
+  1643→                {show ? (
+  1644→                  <EyeOff className="h-4 w-4" aria-hidden="true" />
+  1645→                ) : (
+  1646→                  <Eye className="h-4 w-4" aria-hidden="true" />
+  1647→                )}
+  1648→              </button>
+  1649→            </div>
+  1650→          </div>
+  1651→          <div className="grid gap-2">
+  1652→            <Label htmlFor="sec-confirm">Confirmer *</Label>
+  1653→            <Input
+  1654→              id="sec-confirm"
+  1655→              type="password"
+  1656→              inputMode="numeric"
+  1657→              maxLength={4}
+  1658→              value={confirm}
+  1659→              onChange={(e) => setConfirm(e.target.value.replace(/\D/g, ""))}
+  1660→              autoComplete="new-password"
+  1661→              className="h-11 rounded-sm border-[#d8d4ca] tracking-[0.5em]"
+  1662→            />
+  1663→          </div>
+  1664→          {!customer.email && (
+  1665→            <div className="grid gap-2">
+  1666→              <Label htmlFor="sec-email">Email de réception *</Label>
+  1667→              <Input
+  1668→                id="sec-email"
+  1669→                type="email"
+  1670→                value={email}
+  1671→                onChange={(e) => setEmail(e.target.value)}
+  1672→                placeholder="vous@exemple.com"
+  1673→                autoComplete="email"
+  1674→                className="h-11 rounded-sm border-[#d8d4ca]"
+  1675→              />
+  1676→              <p className="text-xs text-muted-foreground">
+  1677→                Une copie de vos identifiants (numéro + code PIN) y sera
+  1678→                envoyée.
+  1679→              </p>
+  1680→            </div>
+  1681→          )}
+  1682→          <div className="flex gap-2">
+  1683→            <Button
+  1684→              type="submit"
+  1685→              className="rounded-sm bg-[#d4af37] font-extrabold text-[#0b0b0b] hover:bg-[#bfa032]"
+  1686→            >
+  1687→              Enregistrer
+  1688→            </Button>
+  1689→            <Button
+  1690→              type="button"
+  1691→              variant="ghost"
+  1692→              className="rounded-sm font-bold text-[#3d3d3d] hover:bg-[#f1efe9]"
+  1693→              onClick={() => setMode("closed")}
+  1694→            >
+  1695→              Annuler
+  1696→            </Button>
+  1697→          </div>
+  1698→        </form>
+  1699→      )}
+  1700→    </section>
+  1701→  );
+  1702→}
+  1703→
+  1704→function DangerZone() {
+  1705→  const [confirmed, setConfirmed] = useState(false);
+  1706→
+  1707→  const wipe = () => {
+  1708→    try {
+  1709→      useShop.persist.clearStorage();
+  1710→    } catch {
+  1711→      /* stockage indisponible : on recharge quand même */
+  1712→    }
+  1713→    window.location.reload();
+  1714→  };
+  1715→
+  1716→  return (
+  1717→    <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[#f0d9d3] bg-[#fdf5f2] p-5">
+  1718→      <div>
+  1719→        <p className="flex items-center gap-2 font-extrabold text-[#c6482f]">
+  1720→          <Trash2 className="h-4.5 w-4.5" aria-hidden="true" />
+  1721→          Effacer mon compte
+  1722→        </p>
+  1723→        <p className="mt-0.5 text-sm text-muted-foreground">
+  1724→          Commandes, points et préférences supprimés de cet appareil.
+  1725→        </p>
+  1726→      </div>
+  1727→      <AlertDialog open={confirmed} onOpenChange={setConfirmed}>
+  1728→        <AlertDialogTrigger asChild>
+  1729→          <Button variant="outline" className="rounded-sm border-[#c6482f]/40 font-bold text-[#c6482f] hover:bg-[#f8e2dc]">
+  1730→            Effacer
+  1731→          </Button>
+  1732→        </AlertDialogTrigger>
+  1733→        <AlertDialogContent className="rounded-md">
+  1734→          <AlertDialogHeader>
+  1735→            <AlertDialogTitle>Effacer toutes mes données ?</AlertDialogTitle>
+  1736→            <AlertDialogDescription>
+  1737→              Cette action supprime votre compte, vos {useShop.getState().orders.length} commande(s),
+  1738→              vos points fidélité et vos préférences, sur cet appareil.
+  1739→            </AlertDialogDescription>
+  1740→          </AlertDialogHeader>
+  1741→          <AlertDialogFooter>
+  1742→            <AlertDialogCancel className="rounded-sm">Annuler</AlertDialogCancel>
+  1743→            <AlertDialogAction
+  1744→              className="rounded-sm bg-[#c6482f] hover:bg-[#a83c26]"
+  1745→              onClick={wipe}
+  1746→            >
+  1747→              Tout effacer
+  1748→            </AlertDialogAction>
+  1749→          </AlertDialogFooter>
+  1750→        </AlertDialogContent>
+  1751→      </AlertDialog>
+  1752→    </div>
+  1753→  );
+  1754→}
+  1755→

@@ -27,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getProduct } from "@/lib/products";
 import { imgFor } from "@/lib/images";
 import { formatFCFA } from "@/lib/format";
 import { pointsForAmount, rewardDiscount } from "@/lib/loyalty";
@@ -79,6 +78,7 @@ export function CheckoutView() {
   const placeOrder = useShop((s) => s.placeOrder);
   const openCart = useShop((s) => s.openCart);
   const openCatalog = useShop((s) => s.openCatalog);
+  const products = useShop((s) => s.products);
 
   const [form, setForm] = useState<FormState>({
     name: customer?.name ?? "",
@@ -462,7 +462,7 @@ export function CheckoutView() {
 
               <ul className="flex max-h-72 flex-col gap-3 overflow-y-auto nice-scroll pr-1">
                 {cart.map((line) => {
-                  const p = getProduct(line.productId);
+                  const p = products.find((pr) => pr.id === line.productId);
                   if (!p) return null;
                   return (
                     <li key={line.productId} className="flex items-center gap-3">

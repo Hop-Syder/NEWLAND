@@ -2,12 +2,13 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { getProduct } from "@/lib/products";
+import { PRODUCTS, type Product } from "@/lib/products";
 import {
   pointsForAmount,
   rewardDiscount,
   type Reward,
 } from "@/lib/loyalty";
+import { SEED_STOCK, buildSeedData } from "@/lib/seed";
 
 export type View =
   | "home"
@@ -46,6 +47,16 @@ export interface OrderLine {
   qty: number;
 }
 
+/** Statut d'une commande, géré par l'administrateur. */
+export type OrderStatus = "en_attente" | "confirmee" | "livree" | "annulee";
+
+export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+  en_attente: "En attente",
+  confirmee: "Confirmée",
+  livree: "Livrée",
+  annulee: "Annulée",
+};
+
 export interface Order {
   id: string;
   createdAt: string;
@@ -68,6 +79,28 @@ export interface Order {
   rewardUsed: { label: string; cost: number } | null;
   name: string;
   phone: string;
+  email?: string;
+  /** Statut de suivi (géré par l'admin). Défaut : en attente. */
+  status?: OrderStatus;
+}
+
+/** Compte client vu par l'administrateur (registre global). */
+export interface ClientAccount {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  city: string;
+  /** Le client a-t-il déjà défini son code PIN de connexion ? */
+  pinSet: boolean;
+  /** Solde de points actuel. */
+  points: number;
+  /** Points cumulés à vie (paliers Bronze / Argent / Or). */
+  lifetimePoints: number;
+  ordersCount: number;
+  totalSpent: number;
+  createdAt: string;
+  lastOrderAt: string | null;
 }
 
 /** Données saisies au checkout, transmises à placeOrder. */
@@ -179,6 +212,20 @@ interface ShopState {
 
   accountTab: AccountTab;
 
+  /** — Espace administrateur (/admin) — */
+  /** Catalogue éditable depuis l'admin (base : catalogue statique). */
+  products: Product[];
+  /** Stock par identifiant produit. */
+  stock: Record<string, number>;
+  /** Registre de tous les comptes clients (démo + réels). */
+  clients: ClientAccount[];
+  /** Toutes les commandes du site, vues par l'admin. */
+  adminOrders: Order[];
+  /** Session administrateur (démo : mot de passe dans AdminView). */
+  adminLoggedIn: boolean;
+  /** Bandeau d'annonce contrôlé depuis l'admin et affiché sur le site. */
+  banner: { enabled: boolean; text: string };
+
   /** — Sécurité du compte — */
   /** Code PIN à 4 chiffres choisi par le client après sa première commande.
    *  null = pas encore défini. Démo : stocké sur l'appareil ; en production il
@@ -221,7 +268,27 @@ interface ShopState {
   logout: () => void;
   placeOrder: (input: PlaceOrderInput) => void;
   resetToHome: () => void;
+
+  /* ————— Actions administrateur ————— */
+  addProduct: (p: Product, stockQty: number) => void;
+  updateProduct: (id: string, patch: Partial<Product>) => void;
+  deleteProduct: (id: string) => void;
+  setStock: (id: string, qty: number) => void;
+  /** Change le statut d'une commande (adminOrders + commandes du client). */
+  setOrderStatus: (orderId: string, status: OrderStatus) => void;
+  /** Connexion admin. Retourne true si le mot de passe est correct. */
+  adminLogin: (password: string) => boolean;
+  adminLogout: () => void;
+  setBanner: (enabled: boolean, text?: string) => void;
+  /** Réinitialise toutes les données (démo) à leur état d'origine. */
+  resetDemoData: () => void;
 }
+
+/** Mot de passe admin de démonstration (pas de backend en démo). */
+export const ADMIN_PASSWORD = "cauris2026";
+
+/** Données de démo injectées au premier chargement (persistées ensuite). */
+const SEED = buildSeedData();
 
 export const useShop = create<ShopState>()(
   persist(
@@ -238,6 +305,12 @@ export const useShop = create<ShopState>()(
       lifetimePoints: 0,
       activeReward: null,
       accountTab: "overview",
+      products: PRODUCTS,
+      stock: SEED_STOCK,
+      clients: SEED.clients,
+      adminOrders: SEED.adminOrders,
+      adminLoggedIn: false,
+      banner: { enabled: false, text: "" },
       pin: null,
       pinSetAt: null,
       credentialsSentTo: null,
@@ -300,6 +373,12 @@ export const useShop = create<ShopState>()(
           customer: c,
           // Création manuelle du compte : session ouverte d'office.
           sessionActive: s.customer ? s.sessionActive : true,
+          // Le registre admin reste synchronisé avec les coordonnées.
+          clients: s.clients.map((cl) =>
+            phoneMatches(cl.phone, c.phone)
+              ? { ...cl, name: c.name, email: c.email ?? cl.email, city: c.city ?? cl.city }
+              : cl
+          ),
         })),
 
       setAccountTab: (tab) => set({ accountTab: tab }),
@@ -314,6 +393,12 @@ export const useShop = create<ShopState>()(
           // (numéro + code PIN) part par email — simulation d'envoi.
           sessionActive: true,
           credentialsSentTo: s.customer?.email ?? null,
+          // Le registre admin apprend que ce client est sécurisé.
+          clients: s.clients.map((cl) =>
+            s.customer && phoneMatches(cl.phone, s.customer.phone)
+              ? { ...cl, pinSet: true }
+              : cl
+          ),
         })),
 
       resendCredentials: () => {
@@ -330,7 +415,7 @@ export const useShop = create<ShopState>()(
         set((s) => {
           // 1. Photo figée du panier au moment de la commande.
           const lines: OrderLine[] = s.cart.flatMap((l) => {
-            const p = getProduct(l.productId);
+            const p = s.products.find((pr) => pr.id === l.productId);
             return p
               ? [{ productId: p.id, name: p.name, price: p.price, qty: l.qty }]
               : [];
@@ -382,12 +467,54 @@ export const useShop = create<ShopState>()(
               : null,
             name: input.name,
             phone: input.phone,
+            email: input.email || customer.email,
+            status: "en_attente",
           };
+
+          // Le registre global (admin) enregistre la commande et le compte.
+          const existingClient = s.clients.find((cl) =>
+            phoneMatches(cl.phone, input.phone)
+          );
+          const clients = existingClient
+            ? s.clients.map((cl) =>
+                cl.id === existingClient.id
+                  ? {
+                      ...cl,
+                      name: customer.name,
+                      email: customer.email ?? cl.email,
+                      city: customer.city ?? cl.city,
+                      ordersCount: cl.ordersCount + 1,
+                      totalSpent: cl.totalSpent + subtotal,
+                      points: cl.points + pointsEarned - (reward?.cost ?? 0),
+                      lifetimePoints: cl.lifetimePoints + pointsEarned,
+                      lastOrderAt: order.createdAt,
+                    }
+                  : cl
+              )
+            : [
+                {
+                  id: `c-${Date.now()}`,
+                  name: customer.name,
+                  phone: customer.phone,
+                  email: customer.email,
+                  city: customer.city ?? input.city,
+                  pinSet: s.pin !== null,
+                  points: pointsEarned - (reward?.cost ?? 0),
+                  lifetimePoints: pointsEarned,
+                  ordersCount: 1,
+                  totalSpent: subtotal,
+                  createdAt: order.createdAt,
+                  lastOrderAt: order.createdAt,
+                },
+                ...s.clients,
+              ];
 
           return {
             orders: [order, ...s.orders],
+            adminOrders: [order, ...s.adminOrders],
             lastOrder: order,
             customer,
+            clients,
             loyaltyPoints:
               s.loyaltyPoints + pointsEarned - (reward?.cost ?? 0),
             lifetimePoints: s.lifetimePoints + pointsEarned,
@@ -402,6 +529,89 @@ export const useShop = create<ShopState>()(
 
       resetToHome: () =>
         set({ view: "home", productId: null, lastOrder: null }),
+
+      /* ————— Administrateur ————— */
+
+      addProduct: (p, stockQty) =>
+        set((s) => ({
+          products: [p, ...s.products],
+          stock: { ...s.stock, [p.id]: stockQty },
+        })),
+
+      updateProduct: (id, patch) =>
+        set((s) => ({
+          products: s.products.map((p) =>
+            p.id === id ? { ...p, ...patch } : p
+          ),
+        })),
+
+      deleteProduct: (id) =>
+        set((s) => {
+          const stock = { ...s.stock };
+          delete stock[id];
+          return {
+            products: s.products.filter((p) => p.id !== id),
+            stock,
+            // Un produit supprimé ne doit plus rester dans le panier.
+            cart: s.cart.filter((l) => l.productId !== id),
+          };
+        }),
+
+      setStock: (id, qty) =>
+        set((s) => ({ stock: { ...s.stock, [id]: Math.max(0, qty) } })),
+
+      setOrderStatus: (orderId, status) =>
+        set((s) => ({
+          adminOrders: s.adminOrders.map((o) =>
+            o.id === orderId ? { ...o, status } : o
+          ),
+          orders: s.orders.map((o) =>
+            o.id === orderId ? { ...o, status } : o
+          ),
+          lastOrder:
+            s.lastOrder?.id === orderId
+              ? { ...s.lastOrder, status }
+              : s.lastOrder,
+        })),
+
+      adminLogin: (password) => {
+        const ok = password === ADMIN_PASSWORD;
+        if (ok) set({ adminLoggedIn: true });
+        return ok;
+      },
+
+      adminLogout: () => set({ adminLoggedIn: false }),
+
+      setBanner: (enabled, text) =>
+        set((s) => ({
+          banner: {
+            enabled,
+            text: text !== undefined ? text : s.banner.text,
+          },
+        })),
+
+      resetDemoData: () =>
+        set(() => {
+          const fresh = buildSeedData();
+          return {
+            cart: [],
+            customer: null,
+            orders: [],
+            lastOrder: null,
+            loyaltyPoints: 0,
+            lifetimePoints: 0,
+            activeReward: null,
+            pin: null,
+            pinSetAt: null,
+            credentialsSentTo: null,
+            sessionActive: false,
+            products: PRODUCTS,
+            stock: SEED_STOCK,
+            clients: fresh.clients,
+            adminOrders: fresh.adminOrders,
+            banner: { enabled: false, text: "" },
+          };
+        }),
     }),
     {
       name: "maison-cauris-shop",
@@ -418,6 +628,12 @@ export const useShop = create<ShopState>()(
         pinSetAt: s.pinSetAt,
         credentialsSentTo: s.credentialsSentTo,
         sessionActive: s.sessionActive,
+        products: s.products,
+        stock: s.stock,
+        clients: s.clients,
+        adminOrders: s.adminOrders,
+        adminLoggedIn: s.adminLoggedIn,
+        banner: s.banner,
       }),
     }
   )
@@ -429,10 +645,12 @@ function makeOrderId(): string {
   return `MC-${n}`;
 }
 
-/** Total du panier en FCFA (hors frais de livraison). */
+/** Total du panier en FCFA (hors frais de livraison) — utilise le catalogue
+ *  courant du store (produits ajoutés par l'admin inclus). */
 export function cartSubtotal(cart: CartLine[]): number {
+  const products = useShop.getState().products;
   return cart.reduce((sum, line) => {
-    const p = getProduct(line.productId);
+    const p = products.find((pr) => pr.id === line.productId);
     return sum + (p ? p.price * line.qty : 0);
   }, 0);
 }

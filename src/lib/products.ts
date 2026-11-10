@@ -19,6 +19,8 @@ export interface Product {
   features: string[];
   practical: string[]; // informations pratiques
   featured?: boolean;
+  /** Garantie boutique en mois (renseigné pour les produits ajoutés via l'admin). */
+  warrantyMonths?: number;
   source: string; // référence marché du prix constaté
 }
 

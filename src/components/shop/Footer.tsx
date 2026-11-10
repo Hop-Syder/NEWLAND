@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   CATEGORIES,
-  PRODUCTS,
 } from "@/lib/products";
 import { useShop } from "@/lib/store";
 
@@ -39,6 +38,7 @@ const LEGAL_LINKS = [
 export function Footer() {
   const openCatalog = useShop((s) => s.openCatalog);
   const goHome = useShop((s) => s.goHome);
+  const productCount = useShop((s) => s.products.length);
 
   return (
     <footer
@@ -131,7 +131,7 @@ export function Footer() {
                   className="h-4 w-4 text-[#d4af37] transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
                   aria-hidden="true"
                 />
-                Tout voir ({PRODUCTS.length})
+                Tout voir ({productCount})
               </button>
             </li>
           </ul>
@@ -254,6 +254,14 @@ export function Footer() {
               </button>
             </li>
           ))}
+          <li>
+            <a
+              href="/admin"
+              className="inline-flex items-center gap-1.5 font-semibold text-[#d4af37]/80 hover:text-[#d4af37] hover:underline"
+            >
+              Espace admin
+            </a>
+          </li>
         </ul>
       </div>
     </footer>

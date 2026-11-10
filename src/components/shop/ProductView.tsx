@@ -15,9 +15,7 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
-  getProduct,
   getCategory,
-  relatedProducts,
 } from "@/lib/products";
 import { galleryFor, imgFor } from "@/lib/images";
 import { formatFCFA } from "@/lib/format";
@@ -33,8 +31,9 @@ export function ProductView() {
   const openCatalog = useShop((s) => s.openCatalog);
   const addToCart = useShop((s) => s.addToCart);
   const openCart = useShop((s) => s.openCart);
+  const products = useShop((s) => s.products);
 
-  const product = getProduct(productId ?? "");
+  const product = products.find((p) => p.id === (productId ?? ""));
   const [qty, setQty] = useState(1);
   const [imageIndex, setImageIndex] = useState(0);
 
@@ -42,6 +41,18 @@ export function ProductView() {
     () => (product ? galleryFor(product.imageKeys[0]) : []),
     [product]
   );
+
+  // Produits similaires calculés depuis le catalogue courant du store.
+  const related = useMemo(() => {
+    if (!product) return [];
+    const same = products.filter(
+      (p) => p.category === product.category && p.id !== product.id
+    );
+    const others = products.filter(
+      (p) => p.category !== product.category && p.featured
+    );
+    return [...same, ...others].slice(0, 4);
+  }, [products, product]);
 
   if (!product) {
     return (
@@ -60,7 +71,6 @@ export function ProductView() {
   }
 
   const category = getCategory(product.category);
-  const related = relatedProducts(product);
   const mainImage = gallery[imageIndex] ?? imgFor(product.imageKeys[0]);
 
   const addNow = (goToCart = false) => {

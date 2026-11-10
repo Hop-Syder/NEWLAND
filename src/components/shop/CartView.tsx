@@ -13,7 +13,6 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { getProduct } from "@/lib/products";
 import { imgFor } from "@/lib/images";
 import { formatFCFA } from "@/lib/format";
 import {
@@ -33,6 +32,7 @@ export function CartView() {
   const openCatalog = useShop((s) => s.openCatalog);
   const openCheckout = useShop((s) => s.openCheckout);
   const goHome = useShop((s) => s.goHome);
+  const products = useShop((s) => s.products);
 
   const count = cartCount(cart);
   const subtotal = cartSubtotal(cart);
@@ -88,7 +88,7 @@ export function CartView() {
         {/* Lignes du panier */}
         <ul className="flex flex-col gap-4">
           {cart.map((line, i) => {
-            const p = getProduct(line.productId);
+            const p = products.find((pr) => pr.id === line.productId);
             if (!p) return null;
             return (
               <li key={line.productId}>

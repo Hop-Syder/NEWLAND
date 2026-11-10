@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CATEGORIES, PRODUCTS, getProduct } from "@/lib/products";
+import { CATEGORIES } from "@/lib/products";
 import { imgFor } from "@/lib/images";
 import { formatFCFA } from "@/lib/format";
 import {
@@ -68,6 +68,8 @@ export function Header() {
   const customer = useShop((s) => s.customer);
   const catalogCategory = useShop((s) => s.catalogCategory);
   const openCart = useShop((s) => s.openCart);
+  const products = useShop((s) => s.products);
+  const banner = useShop((s) => s.banner);
 
   const [cartOpen, setCartOpen] = useState(false);
   const count = cartCount(cart);
@@ -90,9 +92,11 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#e6e3db] bg-[#faf9f6]/95 backdrop-blur supports-[backdrop-filter]:bg-[#faf9f6]/85">
-      {/* Bandeau réassurance */}
+      {/* Bandeau réassurance (texte personnalisable depuis l'admin) */}
       <div className="hidden bg-[#0b0b0b] px-4 py-1.5 text-center text-xs font-semibold text-[#eeebe4] sm:block">
-        Livraison 24–48 h · Mobile Money · Retours 5 jours
+        {banner.enabled && banner.text.trim()
+          ? banner.text
+          : "Livraison 24–48 h · Mobile Money · Retours 5 jours"}
       </div>
 
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-5">
@@ -194,7 +198,7 @@ export function Header() {
                 <ScrollArea className="flex-1">
                   <ul className="flex flex-col gap-3 p-4">
                     {cart.map((line) => {
-                      const p = getProduct(line.productId);
+                      const p = products.find((pr) => pr.id === line.productId);
                       if (!p) return null;
                       return (
                         <li
@@ -319,7 +323,7 @@ export function Header() {
           ))}
           <span className="ml-auto hidden items-center gap-2 text-xs font-semibold text-[#808080] lg:flex">
             <Separator orientation="vertical" className="h-4" />
-            {PRODUCTS.length} produits
+            {products.length} produits
           </span>
         </div>
       </nav>

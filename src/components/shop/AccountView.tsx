@@ -94,7 +94,6 @@ import {
 } from "@/lib/store";
 import { SafeImg } from "./SafeImg";
 import { Reveal } from "./Reveal";
-import { getProduct } from "@/lib/products";
 
 const GOLD = "#d4af37";
 const GOLD_DARK = "#8a6a14";
@@ -741,6 +740,7 @@ function OrderRow({ order }: { order: Order }) {
   const stage = orderStage(order);
   const hasWarranty = warrantyActive(order);
   const end = warrantyEnd(order);
+  const products = useShop((s) => s.products);
 
   return (
     <Reveal>
@@ -828,7 +828,7 @@ function OrderRow({ order }: { order: Order }) {
               {/* Articles */}
               <ul className="flex flex-col gap-2.5">
                 {order.lines.map((l) => {
-                  const p = getProduct(l.productId);
+                  const p = products.find((pr) => pr.id === l.productId);
                   return (
                     <li key={l.productId} className="flex items-center gap-3">
                       {p && (
@@ -914,7 +914,10 @@ function OrderRow({ order }: { order: Order }) {
 
 function ReorderButton({ order }: { order: Order }) {
   const addToCart = useShop((s) => s.addToCart);
-  const available = order.lines.filter((l) => getProduct(l.productId));
+  const products = useShop((s) => s.products);
+  const available = order.lines.filter(
+    (l) => products.find((pr) => pr.id === l.productId)
+  );
 
   const reorder = () => {
     available.forEach((l) => addToCart(l.productId, l.qty));

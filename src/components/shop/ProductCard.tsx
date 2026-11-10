@@ -2,7 +2,7 @@
 
 import { ShoppingBasket, ArrowRight } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { type Product, getProduct, getCategory } from "@/lib/products";
+import { type Product, getCategory } from "@/lib/products";
 import { imgFor } from "@/lib/images";
 import { formatFCFA } from "@/lib/format";
 import { useShop } from "@/lib/store";
