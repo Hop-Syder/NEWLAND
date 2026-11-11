@@ -54,17 +54,16 @@ task_context:
 
   current:
     id: "TASK-004-MOBILE-CATALOG-ERGONOMICS"
-    objective: "Optimisation de l'espace écran mobile sur le catalogue : catégories et tags en scroll horizontal, filtres déplacés dans une bottom sheet/drawer"
+    objective: "Intégration totale des filtres mobiles dans le tiroir moderne (Sheet) : catégories et étiquettes intégrées, écran mobile épuré au maximum avec accès immédiat à la grille de produits"
     branch: "main"
     status: "COMPLETED"
     files_in_scope:
       - "src/components/shop/CatalogView.tsx"
-      - "src/app/globals.css"
       - ".dexty/temp-memory-projet.md"
     constraints:
-      - "Réduction de 70% de la hauteur occupée par les filtres sur mobile"
-      - "Grille 2 colonnes sur mobile pour les produits"
-      - "Zéro régression desktop"
+      - "Zéro encombrement sur mobile (seule la barre compacte de 45px subsiste au-dessus des produits)"
+      - "Intégration des catégories et des tags dans la Bottom Sheet"
+      - "Préservation intégrale de la vue desktop"
 
   future:
     known_tasks:

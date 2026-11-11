@@ -128,6 +128,70 @@ export function CatalogView() {
   // Contenu des filtres réutilisé entre desktop (sidebar) et mobile (sheet)
   const filterFieldsContent = (
     <div className="grid gap-5">
+      {/* Catégories dans le tiroir mobile */}
+      <div className="grid gap-2 lg:hidden">
+        <Label className="text-sm font-bold">Catégories</Label>
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => openCatalog("all")}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all ${
+              catalogCategory === "all"
+                ? "bg-[#141414] text-white shadow-xs"
+                : "border border-[#d8d4ca] bg-white text-[#111111]"
+            }`}
+          >
+            <LayoutGrid className="h-3 w-3" />
+            Tout ({products.length})
+          </button>
+          {CATEGORIES.map((c) => {
+            const count = products.filter((p) => p.category === c.id).length;
+            const isSelected = catalogCategory === c.id;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => openCatalog(c.id)}
+                className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all ${
+                  isSelected
+                    ? "bg-[#141414] text-white shadow-xs"
+                    : "border border-[#d8d4ca] bg-white text-[#111111]"
+                }`}
+              >
+                {c.name} ({count})
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Étiquettes dans le tiroir mobile */}
+      {allTags.length > 0 && (
+        <div className="grid gap-2 lg:hidden">
+          <Label className="text-sm font-bold">Étiquettes</Label>
+          <div className="flex flex-wrap gap-1.5">
+            {allTags.map((t) => {
+              const active = activeTag === t;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setActiveTag(active ? null : t)}
+                  className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
+                    active
+                      ? "bg-[#d4af37] text-[#0b0b0b]"
+                      : "border border-[#d8d4ca] bg-white text-[#111111]"
+                  }`}
+                >
+                  {t}
+                  {active && <X className="ml-1 inline h-3 w-3" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Recherche */}
       <div className="grid gap-2">
         <Label htmlFor="filter-search" className="text-sm font-bold">
@@ -214,83 +278,80 @@ export function CatalogView() {
         </div>
       </Reveal>
 
-      {/* Onglets catégories - Défilement horizontal fluide sur mobile */}
-      <Reveal delay={60}>
-        <div
-          role="tablist"
-          aria-label="Filtrer par catégorie"
-          className="no-scrollbar -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-2 pt-1 sm:mx-0 sm:flex-wrap sm:px-0"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={catalogCategory === "all"}
-            onClick={() => openCatalog("all")}
-            className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all sm:rounded-md sm:text-sm ${
-              catalogCategory === "all"
-                ? "bg-[#141414] text-white shadow-sm ring-1 ring-black"
-                : "border border-[#d8d4ca] bg-white text-[#111111] hover:bg-[#eeebe4]"
-            }`}
+      {/* Onglets catégories - Visible uniquement sur Desktop (≥ lg) */}
+      <div className="hidden lg:block">
+        <Reveal delay={60}>
+          <div
+            role="tablist"
+            aria-label="Filtrer par catégorie"
+            className="mb-6 flex flex-wrap gap-2"
           >
-            <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" />
-            Tout ({products.length})
-          </button>
-          {CATEGORIES.map((c) => {
-            const count = products.filter((p) => p.category === c.id).length;
-            const isSelected = catalogCategory === c.id;
-            return (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={catalogCategory === "all"}
+              onClick={() => openCatalog("all")}
+              className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-bold transition-colors ${
+                catalogCategory === "all"
+                  ? "bg-[#141414] text-white"
+                  : "border border-[#d8d4ca] bg-white text-[#111111] hover:bg-[#eeebe4]"
+              }`}
+            >
+              <LayoutGrid className="h-4 w-4" aria-hidden="true" />
+              Tout ({products.length})
+            </button>
+            {CATEGORIES.map((c) => (
               <button
                 key={c.id}
                 type="button"
                 role="tab"
-                aria-selected={isSelected}
+                aria-selected={catalogCategory === c.id}
                 onClick={() => openCatalog(c.id)}
-                className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold transition-all sm:rounded-md sm:text-sm ${
-                  isSelected
-                    ? "bg-[#141414] text-white shadow-sm ring-1 ring-black"
+                className={`rounded-md px-4 py-2 text-sm font-bold transition-colors ${
+                  catalogCategory === c.id
+                    ? "bg-[#141414] text-white"
                     : "border border-[#d8d4ca] bg-white text-[#111111] hover:bg-[#eeebe4]"
                 }`}
               >
-                {c.name} ({count})
+                {c.name} ({products.filter((p) => p.category === c.id).length})
               </button>
-            );
-          })}
-        </div>
-      </Reveal>
-
-      {/* Filtre par étiquettes - Chips horizontales défilables sur mobile */}
-      {allTags.length > 0 && (
-        <Reveal delay={80}>
-          <div
-            role="group"
-            aria-label="Filtrer par étiquette"
-            className="no-scrollbar -mx-4 mb-4 flex items-center gap-1.5 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:px-0"
-          >
-            <span className="shrink-0 text-xs font-bold text-[#808080]">
-              Étiquettes :
-            </span>
-            {allTags.map((t) => {
-              const active = activeTag === t;
-              return (
-                <button
-                  key={t}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setActiveTag(active ? null : t)}
-                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold transition-colors ${
-                    active
-                      ? "bg-[#d4af37] text-[#0b0b0b]"
-                      : "border border-[#d8d4ca] bg-white text-[#111111] hover:bg-[#f4eeda]"
-                  }`}
-                >
-                  {t}
-                  {active && <X className="ml-1 inline h-3 w-3" />}
-                </button>
-              );
-            })}
+            ))}
           </div>
         </Reveal>
-      )}
+
+        {/* Filtre par étiquettes - Desktop uniquement (≥ lg) */}
+        {allTags.length > 0 && (
+          <Reveal delay={80}>
+            <div
+              role="group"
+              aria-label="Filtrer par étiquette"
+              className="mb-6 flex flex-wrap items-center gap-2"
+            >
+              <span className="text-sm font-bold text-[#808080]">
+                Étiquettes&nbsp;:
+              </span>
+              {allTags.map((t) => {
+                const active = activeTag === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setActiveTag(active ? null : t)}
+                    className={`rounded-md px-3 py-1.5 text-sm font-bold transition-colors ${
+                      active
+                        ? "bg-[#d4af37] text-[#0b0b0b]"
+                        : "border border-[#d8d4ca] bg-white text-[#111111] hover:bg-[#f4eeda]"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
+          </Reveal>
+        )}
+      </div>
 
       {/* Barre d'action Mobile : Filtres + Nb Produits + Tri */}
       <div className="mb-4 flex items-center justify-between gap-2 rounded-lg border border-[#e6e3db] bg-white p-2.5 shadow-xs lg:hidden">
