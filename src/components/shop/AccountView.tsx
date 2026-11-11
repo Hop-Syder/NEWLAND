@@ -121,22 +121,24 @@ export function AccountView() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 lg:py-12">
-      {/* En-tête compte */}
+      {/* En-tête compte compact sur 2 lignes */}
       <Reveal>
-        <div className="flex flex-wrap items-center gap-4">
-          <span className="flex h-14 w-14 items-center justify-center rounded-md bg-[#141414] text-xl font-extrabold text-white">
+        <div className="flex items-center gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#141414] text-base font-extrabold text-white shadow-xs">
             {customer.name.trim().charAt(0).toUpperCase()}
           </span>
-          <div className="min-w-0">
-            <h1 className="truncate text-2xl font-extrabold text-[#0b0b0b]">
-              {customer.name}
-            </h1>
-            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Phone className="h-3.5 w-3.5" aria-hidden="true" />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <h1 className="truncate text-base font-extrabold text-[#0b0b0b] sm:text-lg">
+                {customer.name}
+              </h1>
+              <TierBadge className="shrink-0 scale-90 sm:scale-100" />
+            </div>
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Phone className="h-3 w-3 text-[#8a6a14]" aria-hidden="true" />
               {customer.phone}
             </p>
           </div>
-          <TierBadge className="sm:ml-auto" />
         </div>
       </Reveal>
 
@@ -931,11 +933,11 @@ function ReorderButton({ order }: { order: Order }) {
   return (
     <Button
       size="sm"
-      className="rounded-sm bg-[#141414] font-extrabold hover:bg-[#2e2e2e]"
+      className="rounded-sm bg-[#141414] font-extrabold text-white hover:bg-[#2e2e2e]"
       onClick={reorder}
       disabled={available.length === 0}
     >
-      <RefreshCcw className="h-4 w-4" aria-hidden="true" />
+      <RefreshCcw className="h-4 w-4 text-white" aria-hidden="true" />
       Recommander
     </Button>
   );

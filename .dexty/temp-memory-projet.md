@@ -53,20 +53,17 @@ task_context:
       - "Cohérence de marque NEWLAND ELECTRO."
 
   current:
-    id: "TASK-005-ADMIN-DASHBOARD-LOW-STOCK-REDESIGN"
-    objective: "Mise à niveau complète de l'administration : préfixes de commandes NL- (NEWLAND), refonte visuelle du bloc Stocks Faibles avec badge d'alerte, défilement dédié et différenciation rupture vs alerte"
+    id: "TASK-007-ACCOUNT-HEADER-COMPACT-2-LINES"
+    objective: "Optimisation de l'en-tête client (AccountView) : agencement compact sur 2 lignes nettes avec avatar rond, nom + badge membre sur la ligne 1, numéro de téléphone sur la ligne 2"
     branch: "main"
     status: "COMPLETED"
     files_in_scope:
-      - "src/components/admin/AdminView.tsx"
-      - "src/lib/format.ts"
-      - "src/lib/seed.ts"
-      - "src/lib/store.ts"
+      - "src/components/shop/AccountView.tsx"
       - ".dexty/temp-memory-projet.md"
     constraints:
-      - "Préfixe NL- pour NEWLAND ELECTRO"
-      - "Design sombre épuré, scroll personnalisé pour les stocks faibles"
-      - "Validation ESLint 100% OK"
+      - "Tout tient strictement sur 2 lignes horizontales"
+      - "Suppression du badge orphelin renvoyé à la ligne"
+      - "Validation ESLint 100% propre"
 
   future:
     known_tasks:
