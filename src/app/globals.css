@@ -187,3 +187,12 @@
   border-radius: 4px;
 }
 .nice-scroll::-webkit-scrollbar-thumb:hover { background: #bdb8ac; }
+
+/* Masquer la scrollbar tout en conservant le scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

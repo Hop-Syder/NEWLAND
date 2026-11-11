@@ -40,47 +40,31 @@
 ```yaml
 task_context:
   previous:
-    id: "TASK-002-MERGE-DEXTY-AGENT-SKILLS"
+    id: "TASK-003-REBRANDING-NEWLAND-ELECTRO"
     status: "DONE"
-    result: "Installation et fusion de Dexty Agent Skills 3.5.1 avec le noyau DEXTY v2.2."
+    result: "Mise à jour du branding NEWLAND ELECTRO (NEWLAND GROUP)."
     files_changed:
-      - "agents/"
-      - ".project-memory/"
-      - ".agents/"
-      - "tools/"
-      - "AGENTS.md"
+      - "src/app/layout.tsx"
+      - "src/components/shop/Header.tsx"
+      - "src/components/shop/Footer.tsx"
+      - "src/components/admin/AdminView.tsx"
+      - "src/components/shop/AccountView.tsx"
     important_decisions:
-      - "Unification des agents et de la mémoire de travail."
+      - "Cohérence de marque NEWLAND ELECTRO."
 
   current:
-    id: "TASK-003-PURGE-AND-FRENCH-TRANSLATION"
-    objective: "Assainissement complet du projet : suppression des traces / dépendances Z-AI, purge du logo Z externe, remplacement par le blason officiel Maison Cauris SVG, traduction 100% français des commentaires et messages de scripts."
+    id: "TASK-004-MOBILE-CATALOG-ERGONOMICS"
+    objective: "Optimisation de l'espace écran mobile sur le catalogue : catégories et tags en scroll horizontal, filtres déplacés dans une bottom sheet/drawer"
     branch: "main"
     status: "COMPLETED"
     files_in_scope:
-      - "package.json"
-      - ".gitignore"
-      - "public/logo.svg"
-      - "src/app/layout.tsx"
-      - "scripts/build_images.py"
-      - "scripts/img_*.sh"
-      - ".zscripts/build.sh"
-      - ".zscripts/database-runtime-build.sh"
-      - ".zscripts/dev.sh"
-      - ".zscripts/mini-services-build.sh"
-      - ".zscripts/mini-services-install.sh"
-      - ".zscripts/mini-services-start.sh"
-      - ".zscripts/python-runtime-build.sh"
-      - ".zscripts/start.sh"
-      - "tests/database-runtime-build.sh"
-      - "src/components/admin/AdminView.tsx"
-      - ".project-memory/STATE.md"
-      - ".project-memory/SUCCESSES.md"
+      - "src/components/shop/CatalogView.tsx"
+      - "src/app/globals.css"
       - ".dexty/temp-memory-projet.md"
     constraints:
-      - "Ne casser aucun script ni processus de build Next.js"
-      - "Zéro caractère chinois restant dans les fichiers de code et scripts"
-      - "Valider le linter ESLint et le build Next.js"
+      - "Réduction de 70% de la hauteur occupée par les filtres sur mobile"
+      - "Grille 2 colonnes sur mobile pour les produits"
+      - "Zéro régression desktop"
 
   future:
     known_tasks:
