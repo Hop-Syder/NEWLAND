@@ -31,19 +31,21 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Maison Cauris — Électroménager, cuisine et maison au Bénin",
+  title: "NEWLAND ELECTRO — Électroménager, high-tech et maison au Bénin",
   description:
-    "Boutique en ligne béninoise : appareils ménagers, articles de cuisine et équipements pour la maison ou le bureau. Comparez facilement, payez en Mobile Money, faites-vous livrer à Cotonou et partout au Bénin.",
+    "NEWLAND ELECTRO par NEWLAND GROUP : boutique en ligne d'appareils ménagers, équipements high-tech et maison au Bénin. Comparez facilement, payez en Mobile Money, faites-vous livrer à Cotonou et partout au Bénin.",
   keywords: [
+    "NEWLAND ELECTRO",
+    "NEWLAND GROUP",
     "électroménager Bénin",
     "boutique en ligne Cotonou",
     "cuisine",
     "maison",
-    "bureau",
+    "high-tech",
     "Mobile Money",
   ],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/logo.svg",
   },
 };
 

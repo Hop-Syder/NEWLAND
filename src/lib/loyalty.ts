@@ -1,5 +1,5 @@
 /**
- * Programme de fidélité Maison Cauris.
+ * Programme de fidélité NEWLAND ELECTRO (NEWLAND GROUP).
  *
  * Règle simple définie par la boutique :
  *  - chaque tranche de 10 000 FCFA payés rapporte 5 points ;

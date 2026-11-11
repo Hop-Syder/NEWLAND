@@ -52,17 +52,17 @@ export function Footer() {
             type="button"
             onClick={goHome}
             className="flex items-center gap-2.5 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37]"
-            aria-label="Maison Cauris — retour en haut"
+            aria-label="NEWLAND ELECTRO — retour en haut"
           >
             <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#141414] text-white ring-1 ring-white/20">
               <Shell className="h-5.5 w-5.5" aria-hidden="true" />
             </span>
             <span className="flex flex-col leading-none">
               <span className="text-lg font-extrabold text-white">
-                Maison Cauris
+                NEWLAND ELECTRO
               </span>
               <span className="text-[11px] font-semibold text-[#d4af37]">
-                Maison · Cuisine · Bénin
+                Une marque de NEWLAND GROUP
               </span>
             </span>
           </button>
@@ -174,7 +174,7 @@ export function Footer() {
               href="https://facebook.com"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Maison Cauris sur Facebook (lien à personnaliser)"
+              aria-label="NEWLAND ELECTRO sur Facebook (lien à personnaliser)"
               className="flex h-11 w-11 items-center justify-center rounded-md bg-white/10 transition-colors hover:bg-[#d4af37]"
             >
               <Facebook className="h-5 w-5" aria-hidden="true" />
@@ -183,7 +183,7 @@ export function Footer() {
               href="https://instagram.com"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Maison Cauris sur Instagram (lien à personnaliser)"
+              aria-label="NEWLAND ELECTRO sur Instagram (lien à personnaliser)"
               className="flex h-11 w-11 items-center justify-center rounded-md bg-white/10 transition-colors hover:bg-[#d4af37]"
             >
               <Instagram className="h-5 w-5" aria-hidden="true" />
@@ -192,7 +192,7 @@ export function Footer() {
               href="https://wa.me/2290197000000"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Contacter Maison Cauris sur WhatsApp"
+              aria-label="Contacter NEWLAND ELECTRO sur WhatsApp"
               className="flex h-11 w-11 items-center justify-center rounded-md bg-white/10 transition-colors hover:bg-[#d4af37]"
             >
               <MessageCircle className="h-5 w-5" aria-hidden="true" />
@@ -201,7 +201,7 @@ export function Footer() {
               href="https://youtube.com"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Maison Cauris sur YouTube (lien à personnaliser)"
+              aria-label="NEWLAND ELECTRO sur YouTube (lien à personnaliser)"
               className="flex h-11 w-11 items-center justify-center rounded-md bg-white/10 transition-colors hover:bg-[#d4af37]"
             >
               <Youtube className="h-5 w-5" aria-hidden="true" />
@@ -233,7 +233,7 @@ export function Footer() {
 
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-6 text-center sm:flex-row sm:text-left">
         <p className="text-xs text-[#eeebe4]/70">
-          © {new Date().getFullYear()} Maison Cauris — Cotonou, Bénin. Tous
+          © {new Date().getFullYear()} NEWLAND ELECTRO — NEWLAND GROUP. Cotonou, Bénin. Tous
           droits réservés.
         </p>
         <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-[#eeebe4]/70">

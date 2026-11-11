@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * Espace administrateur Maison Cauris (/admin).
+ * Espace administrateur NEWLAND ELECTRO (/admin).
+ * NEWLAND GROUP
  *
  * Tableau de bord pour piloter tout le site : chiffre d'affaires, commandes
  * (statuts modifiables), comptes clients (points fidélité, PIN, suivi des
@@ -252,7 +253,7 @@ function AdminLogin() {
             Espace administrateur
           </h1>
           <p className="mt-1 text-sm text-[#a3a3a3]">
-            Maison Cauris — suivi du site
+            NEWLAND ELECTRO — suivi du site
           </p>
         </div>
 
@@ -321,9 +322,9 @@ function AdminDashboard() {
             <Shell className="h-5 w-5 text-[#0b0b0b]" aria-hidden="true" />
           </span>
           <div className="leading-tight">
-            <p className="text-base font-extrabold">Maison Cauris</p>
+            <p className="text-base font-extrabold">NEWLAND ELECTRO</p>
             <p className="text-xs font-semibold text-[#d4af37]">
-              Administration
+              Administration (NEWLAND GROUP)
             </p>
           </div>
           <div className="ml-auto flex items-center gap-2">
@@ -1090,7 +1091,10 @@ function ClientOrdersDialog({
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [adminOrders, client.phone]
   );
-  const valid = orders.filter((o) => statusOf(o) !== "annulee");
+  const valid = useMemo(
+    () => orders.filter((o) => statusOf(o) !== "annulee"),
+    [orders]
+  );
   const spent = valid.reduce((sum, o) => sum + o.subtotal, 0);
   const avg = valid.length ? Math.round(spent / valid.length) : 0;
 

@@ -1,32 +1,39 @@
 #!/bin/bash
+# @author @hopsyder
+# @organization Nexus Partners
+# @description Script de build groupé pour les mini-services
+# @created 2026-11-11
+# @site nexus-partners.xyz
 
-# 配置项
-ROOT_DIR="/home/z/my-project/mini-services"
-DIST_DIR="/tmp/build_fullstack_$BUILD_ID/mini-services-dist"
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT_DIR="$PROJECT_DIR/mini-services"
+DIST_DIR="${DIST_DIR:-$PROJECT_DIR/mini-services-dist}"
 
 main() {
-    echo "🚀 开始批量构建..."
+    echo "🚀 Démarrage du build groupé des mini-services..."
     
-    # 检查 rootdir 是否存在
+    # Vérification de l'existence du dossier mini-services
     if [ ! -d "$ROOT_DIR" ]; then
-        echo "ℹ️  目录 $ROOT_DIR 不存在，跳过构建"
+        echo "ℹ️  Le dossier $ROOT_DIR n'existe pas, build ignoré."
         return
     fi
     
-    # 创建输出目录（如果不存在）
+    # Création du dossier de sortie
     mkdir -p "$DIST_DIR"
     
-    # 统计变量
+    # Compteurs
     success_count=0
     fail_count=0
     
-    # 遍历 mini-services 目录下的所有文件夹
+    # Parcours des sous-dossiers dans mini-services
     for dir in "$ROOT_DIR"/*; do
-        # 检查是否是目录且包含 package.json
         if [ -d "$dir" ] && [ -f "$dir/package.json" ]; then
             project_name=$(basename "$dir")
             
-            # 智能查找入口文件 (按优先级查找)
+            # Recherche du fichier d'entrée par ordre de priorité
             entry_path=""
             for entry in "src/index.ts" "index.ts" "src/index.js" "index.js"; do
                 if [ -f "$dir/$entry" ]; then
@@ -36,43 +43,41 @@ main() {
             done
             
             if [ -z "$entry_path" ]; then
-                echo "⚠️  跳过 $project_name: 未找到入口文件 (index.ts/js)"
+                echo "⚠️  Ignoré $project_name : aucun point d'entrée trouvé (index.ts/js)"
                 continue
             fi
             
             echo ""
-            echo "📦 正在构建: $project_name..."
+            echo "📦 Build en cours : $project_name..."
             
-            # 使用 bun build CLI 构建
             output_file="$DIST_DIR/mini-service-$project_name.js"
             
             if bun build "$entry_path" \
                 --outfile "$output_file" \
                 --target bun \
                 --minify; then
-                echo "✅ $project_name 构建成功 -> $output_file"
+                echo "✅ $project_name compilé avec succès -> $output_file"
                 success_count=$((success_count + 1))
             else
-                echo "❌ $project_name 构建失败"
+                echo "❌ Échec de compilation pour $project_name"
                 fail_count=$((fail_count + 1))
             fi
         fi
     done
     
-    if [ -f ./.zscripts/mini-services-start.sh ]; then
-        cp ./.zscripts/mini-services-start.sh "$DIST_DIR/mini-services-start.sh"
+    if [ -f "$SCRIPT_DIR/mini-services-start.sh" ]; then
+        cp "$SCRIPT_DIR/mini-services-start.sh" "$DIST_DIR/mini-services-start.sh"
         chmod +x "$DIST_DIR/mini-services-start.sh"
     fi
     
     echo ""
-    echo "🎉 所有任务完成！"
+    echo "🎉 Tous les builds sont terminés !"
     if [ $success_count -gt 0 ] || [ $fail_count -gt 0 ]; then
-        echo "✅ 成功: $success_count 个"
+        echo "✅ Réussis : $success_count"
         if [ $fail_count -gt 0 ]; then
-            echo "❌ 失败: $fail_count 个"
+            echo "❌ Échoués : $fail_count"
         fi
     fi
 }
 
 main
-

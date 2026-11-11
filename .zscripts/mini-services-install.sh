@@ -1,36 +1,43 @@
 #!/bin/bash
+# @author @hopsyder
+# @organization Nexus Partners
+# @description Installation des dépendances des mini-services
+# @created 2026-11-11
+# @site nexus-partners.xyz
 
-# 配置项
-ROOT_DIR="/home/z/my-project/mini-services"
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)/mini-services"
 
 main() {
-    echo "🚀 开始批量安装依赖..."
+    echo "🚀 Démarrage de l'installation groupée des dépendances..."
     
-    # 检查 rootdir 是否存在
+    # Vérification de l'existence du dossier mini-services
     if [ ! -d "$ROOT_DIR" ]; then
-        echo "ℹ️  目录 $ROOT_DIR 不存在，跳过安装"
+        echo "ℹ️  Le dossier $ROOT_DIR n'existe pas, étape ignorée."
         return
     fi
     
-    # 统计变量
+    # Compteurs et suivi
     success_count=0
     fail_count=0
     failed_projects=""
     
-    # 遍历 mini-services 目录下的所有文件夹
+    # Parcours des sous-dossiers dans mini-services
     for dir in "$ROOT_DIR"/*; do
-        # 检查是否是目录且包含 package.json
+        # Vérification dossier et présence de package.json
         if [ -d "$dir" ] && [ -f "$dir/package.json" ]; then
             project_name=$(basename "$dir")
             echo ""
-            echo "📦 正在安装依赖: $project_name..."
+            echo "📦 Installation des dépendances pour : $project_name..."
             
-            # 进入项目目录并执行 bun install
+            # Installation via Bun
             if (cd "$dir" && bun install); then
-                echo "✅ $project_name 依赖安装成功"
+                echo "✅ $project_name : dépendances installées avec succès"
                 success_count=$((success_count + 1))
             else
-                echo "❌ $project_name 依赖安装失败"
+                echo "❌ $project_name : échec de l'installation des dépendances"
                 fail_count=$((fail_count + 1))
                 if [ -z "$failed_projects" ]; then
                     failed_projects="$project_name"
@@ -41,25 +48,24 @@ main() {
         fi
     done
     
-    # 汇总结果
+    # Résumé
     echo ""
     echo "=================================================="
     if [ $success_count -gt 0 ] || [ $fail_count -gt 0 ]; then
-        echo "🎉 安装完成！"
-        echo "✅ 成功: $success_count 个"
+        echo "🎉 Installation terminée !"
+        echo "✅ Réussis : $success_count"
         if [ $fail_count -gt 0 ]; then
-            echo "❌ 失败: $fail_count 个"
+            echo "❌ Échoués : $fail_count"
             echo ""
-            echo "失败的项目:"
+            echo "Projets en échec :"
             for project in $failed_projects; do
                 echo "  - $project"
             done
         fi
     else
-        echo "ℹ️  未找到任何包含 package.json 的项目"
+        echo "ℹ️  Aucun projet contenant un package.json trouvé."
     fi
     echo "=================================================="
 }
 
 main
-

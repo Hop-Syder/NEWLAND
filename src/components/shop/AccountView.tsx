@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * Espace client Maison Cauris.
+ * Espace client NEWLAND ELECTRO.
+ * NEWLAND GROUP
  * Onglets : Aperçu · Commandes (suivi + garantie) · Fidélité · Paramètres.
  * Le compte est créé automatiquement lors de la première commande ;
  * sans compte, on affiche les avantages et un formulaire de création.
@@ -707,7 +708,7 @@ function PointsCard({ compact = false }: { compact?: boolean }) {
             Carte fidélité
           </p>
           <span className="rounded-sm border border-[#d4af37]/50 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[#d4af37]">
-            Maison Cauris
+            NEWLAND ELECTRO
           </span>
         </div>
         <div className="mt-4">

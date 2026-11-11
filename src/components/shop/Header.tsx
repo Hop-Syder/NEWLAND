@@ -40,14 +40,14 @@ function Logo({ onClick }: { onClick: () => void }) {
       type="button"
       onClick={onClick}
       className="flex items-center gap-2.5 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4af37]"
-      aria-label="Maison Cauris — retour à l'accueil"
+      aria-label="NEWLAND ELECTRO — retour à l'accueil"
     >
       <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#141414] text-white shadow-sm">
         <Shell className="h-5.5 w-5.5" aria-hidden="true" />
       </span>
       <span className="flex flex-col leading-none">
         <span className="text-lg font-extrabold tracking-tight text-[#111111]">
-          Maison Cauris
+          NEWLAND ELECTRO
         </span>
       </span>
     </button>

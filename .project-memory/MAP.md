@@ -4,11 +4,12 @@
   @hopsyder — Nexus Partners
 -->
 
-# Carte mentale : Maison Cauris
+# Carte mentale : NEWLAND ELECTRO (NEWLAND GROUP)
 
 ## 1. Vision
-- **Projet** : Maison Cauris
-- **Finalité** : Boutique e-commerce haut de gamme de maroquinerie, accessoires et objets d'art inspirés de l'Afrique et des cauris avec catalogue, panier, checkout et administration.
+- **Projet** : NEWLAND ELECTRO
+- **Groupe parent** : NEWLAND GROUP
+- **Finalité** : Boutique e-commerce d'électroménager, équipements high-tech et maison au Bénin avec catalogue, panier, checkout et administration.
 
 ## 2. Stack technique
 - **Stack principal** : Next.js App Router + TypeScript + Tailwind CSS + Shadcn UI + Prisma SQLite + Bun

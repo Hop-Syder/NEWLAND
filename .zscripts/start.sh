@@ -1,54 +1,56 @@
 #!/bin/sh
+# @author @hopsyder
+# @organization Nexus Partners
+# @description Lancement de production pour les services Next.js, mini-services et reverse-proxy Caddy
+# @created 2026-11-11
+# @site nexus-partners.xyz
 
 set -e
 
-# 获取脚本所在目录
+# Dossier du script et répertoire de build
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$SCRIPT_DIR"
 
-# 存储所有子进程的 PID
+# PIDs des processus enfants
 pids=""
 
-# 清理函数：优雅关闭所有服务
+# Nettoyage et arrêt propre des services
 cleanup() {
     echo ""
-    echo "🛑 正在关闭所有服务..."
+    echo "🛑 Arrêt en cours de tous les services..."
     
-    # 发送 SIGTERM 信号给所有子进程
+    # Envoi de SIGTERM
     for pid in $pids; do
         if kill -0 "$pid" 2>/dev/null; then
-            service_name=$(ps -p "$pid" -o comm= 2>/dev/null || echo "unknown")
-            echo "   关闭进程 $pid ($service_name)..."
+            service_name=$(ps -p "$pid" -o comm= 2>/dev/null || echo "inconnu")
+            echo "   Arrêt du processus $pid ($service_name)..."
             kill -TERM "$pid" 2>/dev/null
         fi
     done
     
-    # 等待所有进程退出（最多等待 5 秒）
+    # Attente de terminaison
     sleep 1
     for pid in $pids; do
         if kill -0 "$pid" 2>/dev/null; then
-            # 如果还在运行，等待最多 4 秒
             timeout=4
             while [ $timeout -gt 0 ] && kill -0 "$pid" 2>/dev/null; do
                 sleep 1
                 timeout=$((timeout - 1))
             done
-            # 如果仍然在运行，强制关闭
             if kill -0 "$pid" 2>/dev/null; then
-                echo "   强制关闭进程 $pid..."
+                echo "   Arrêt forcé du processus $pid..."
                 kill -KILL "$pid" 2>/dev/null
             fi
         fi
     done
     
-    echo "✅ 所有服务已关闭"
+    echo "✅ Tous les services ont été arrêtés"
     exit 0
 }
 
-echo "🚀 开始启动所有服务..."
+echo "🚀 Démarrage de tous les services..."
 echo ""
 
-# 切换到构建目录
 cd "$BUILD_DIR" || exit 1
 
 ls -lah
@@ -56,22 +58,20 @@ ls -lah
 DEFAULT_PACKAGED_DB_PATH="/app/db/custom.db"
 DEFAULT_PACKAGED_DATABASE_URL="file:$DEFAULT_PACKAGED_DB_PATH"
 
-# Python 依赖在构建阶段安装进部署产物，不复用 Sandbox 的 /home/z/.venv。
-# Next.js 及其启动的子进程都会继承这组路径。
+# Configuration de l'environnement Python si présent
 if [ -d "/app/python-runtime/site-packages" ]; then
     export PYTHONPATH="/app/python-runtime/site-packages:/app/next-service-dist${PYTHONPATH:+:$PYTHONPATH}"
     export PATH="/app/python-runtime/site-packages/bin:$PATH"
     export PYTHONDONTWRITEBYTECODE=1
     export PYTHONUNBUFFERED=1
-    echo "🐍 已启用部署包内 Python runtime: $(python --version 2>&1)"
+    echo "🐍 Runtime Python actif : $(python --version 2>&1)"
 fi
 
-# 启动 Next.js 服务器
+# Démarrage du serveur Next.js en production
 if [ -f "./next-service-dist/server.js" ]; then
-    echo "🚀 启动 Next.js 服务器..."
+    echo "🚀 Démarrage du serveur Next.js..."
     cd next-service-dist/ || exit 1
     
-    # 设置环境变量
     export NODE_ENV=production
     export PORT="${PORT:-3000}"
     export HOSTNAME="${HOSTNAME:-0.0.0.0}"
@@ -79,67 +79,60 @@ if [ -f "./next-service-dist/server.js" ]; then
 
     if [ "$DATABASE_URL" = "$DEFAULT_PACKAGED_DATABASE_URL" ]; then
         if [ ! -f "$DEFAULT_PACKAGED_DB_PATH" ]; then
-            echo "❌ 未找到打包后的数据库文件 $DEFAULT_PACKAGED_DB_PATH"
-            echo "   为避免生产环境启动到空数据库，启动已终止"
+            echo "❌ Fichier de base de données packagé introuvable : $DEFAULT_PACKAGED_DB_PATH"
+            echo "   Arrêt pour éviter un démarrage sur une base de données vide."
             exit 1
         fi
 
-        echo "🗄️  当前使用打包数据库: $DEFAULT_PACKAGED_DB_PATH"
+        echo "🗄️  Base de données packagée utilisée : $DEFAULT_PACKAGED_DB_PATH"
     else
-        echo "🗄️  当前使用外部指定数据库: $DATABASE_URL"
+        echo "🗄️  Base de données externe spécifiée : $DATABASE_URL"
     fi
     
-    # 后台启动 Next.js
     bun server.js &
     NEXT_PID=$!
     pids="$NEXT_PID"
     
-    # 等待一小段时间检查进程是否成功启动
     sleep 1
     if ! kill -0 "$NEXT_PID" 2>/dev/null; then
-        echo "❌ Next.js 服务器启动失败"
+        echo "❌ Échec de démarrage du serveur Next.js"
         exit 1
     else
-        echo "✅ Next.js 服务器已启动 (PID: $NEXT_PID, Port: $PORT)"
+        echo "✅ Serveur Next.js démarré avec succès (PID: $NEXT_PID, Port: $PORT)"
     fi
     
     cd ../
 else
-    echo "⚠️  未找到 Next.js 服务器文件: ./next-service-dist/server.js"
+    echo "⚠️  Fichier serveur Next.js introuvable : ./next-service-dist/server.js"
 fi
 
-# 启动 mini-services
+# Démarrage des mini-services
 if [ -f "./mini-services-start.sh" ]; then
-    echo "🚀 启动 mini-services..."
+    echo "🚀 Démarrage des mini-services..."
     
-    # 运行启动脚本（从根目录运行，脚本内部会处理 mini-services-dist 目录）
     sh ./mini-services-start.sh &
     MINI_PID=$!
     pids="$pids $MINI_PID"
     
-    # 等待一小段时间检查进程是否成功启动
     sleep 1
     if ! kill -0 "$MINI_PID" 2>/dev/null; then
-        echo "⚠️  mini-services 可能启动失败，但继续运行..."
+        echo "⚠️  Avertissement : les mini-services peuvent avoir rencontré une erreur au démarrage..."
     else
-        echo "✅ mini-services 已启动 (PID: $MINI_PID)"
+        echo "✅ Mini-services démarrés (PID: $MINI_PID)"
     fi
 elif [ -d "./mini-services-dist" ]; then
-    echo "⚠️  未找到 mini-services 启动脚本，但目录存在"
+    echo "⚠️  Dossier mini-services-dist présent mais sans script de démarrage"
 else
-    echo "ℹ️  mini-services 目录不存在，跳过"
+    echo "ℹ️  Aucun mini-service à exécuter, étape ignorée."
 fi
 
-# 启动 Caddy（如果存在 Caddyfile）
-echo "🚀 启动 Caddy..."
-
-# Caddy 作为前台进程运行（主进程）
-echo "✅ Caddy 已启动（前台运行）"
+# Lancement de Caddy (reverse-proxy)
+echo "🚀 Lancement de Caddy..."
+echo "✅ Caddy démarré (processus de premier plan)"
 echo ""
-echo "🎉 所有服务已启动！"
+echo "🎉 Tous les services sont opérationnels !"
 echo ""
-echo "💡 按 Ctrl+C 停止所有服务"
+echo "💡 Appuyez sur Ctrl+C pour arrêter l'ensemble des services."
 echo ""
 
-# Caddy 作为主进程运行
 exec caddy run --config Caddyfile --adapter caddyfile

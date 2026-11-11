@@ -19,15 +19,15 @@
 - Backend : Next.js API Routes / Server Actions.
 - Base de données : SQLite via Prisma ORM (`@prisma/client` ^6.11.1).
 - Package Manager / Runtime : Bun (`bun.lock`).
-- DevOps / Déploiement : Caddyfile, Standalone Next.js build (`server.js`), scripts personnalisés (`scripts/`, `.zscripts/`).
-- Qualité & Audit : ESLint 9, TypeScript strict, SkillSpector / SHA-256 Skills Verification.
+- DevOps / Déploiement : Caddyfile, Standalone Next.js build (`server.js`), scripts d'infrastructure nettoyés et traduits en français (`.zscripts/`).
+- Qualité & Audit : ESLint 9 (100% validé), Tests d'intégration bash (100% validés), Next.js Build Standalone (100% validé).
 
 ### Architecture & Organisation
 - `src/app/` : Routes App Router (`page.tsx` SPA multi-vues, `/admin/page.tsx` espace administration, `/api/` endpoints).
 - `src/components/shop/` : Composants e-commerce (`Header`, `Footer`, `HomePage`, `CatalogView`, `ProductView`, `CartView`, `CheckoutView`, `OrderSuccessView`, `AccountView`, `MobileDock`).
 - `src/components/admin/` : Espace d'administration (`AdminView`, gestion catalogue/commandes).
 - `src/lib/` : Store Zustand, utilitaires, client Prisma.
-- `prisma/` : Schéma Prisma (`schema.prisma`) avec modèles `User` et `Post` (à faire évoluer vers catalogue e-commerce).
+- `prisma/` : Schéma Prisma (`schema.prisma`) avec modèles `User` et `Post`.
 - `.dexty/` : Gouvernance DEXTY v2.2, contrats de tâches (`task-contracts/`), mémoire dynamique (`temp-memory-projet.md`), snapshots (`snapshots/`).
 - `.project-memory/` : Mémoire persistante Dexty 3.5.1 (`MAP.md`, `STATE.md`, `ERRORS.md`, `REFUSALS.md`, `DECISIONS.md`, `SUCCESSES.md`).
 - `agents/` : Les 8 agents spécialisés canoniques Dexty (`01-product-manager.md` à `08-project-memory.md`).
@@ -40,43 +40,53 @@
 ```yaml
 task_context:
   previous:
-    id: "TASK-001-SETUP-DEXTY"
-    status: "DONE"
-    result: "Installation du socle DEXTY v2.2 sur NEWLAND."
-    files_changed:
-      - ".dexty/temp-memory-projet.md"
-    important_decisions:
-      - "Création du dossier .dexty/ et initialisation de la mémoire."
-
-  current:
     id: "TASK-002-MERGE-DEXTY-AGENT-SKILLS"
-    objective: "Installation et fusion du framework Dexty Agent Skills 3.5.1 (Hop-Syder/Dexty-agent-skills-2026) avec l'agent DEXTY"
-    branch: "main"
-    status: "COMPLETED"
-    files_in_scope:
+    status: "DONE"
+    result: "Installation et fusion de Dexty Agent Skills 3.5.1 avec le noyau DEXTY v2.2."
+    files_changed:
       - "agents/"
       - ".project-memory/"
       - ".agents/"
       - "tools/"
-      - "docs/super-agent/"
-      - "skills.catalog.json"
       - "AGENTS.md"
-      - "CLAUDE.md"
-      - "VERSION"
-      - "wake.sh"
-      - "skills-sync.sh"
-      - "skills-check.sh"
+    important_decisions:
+      - "Unification des agents et de la mémoire de travail."
+
+  current:
+    id: "TASK-003-PURGE-AND-FRENCH-TRANSLATION"
+    objective: "Assainissement complet du projet : suppression des traces / dépendances Z-AI, purge du logo Z externe, remplacement par le blason officiel Maison Cauris SVG, traduction 100% français des commentaires et messages de scripts."
+    branch: "main"
+    status: "COMPLETED"
+    files_in_scope:
+      - "package.json"
+      - ".gitignore"
+      - "public/logo.svg"
+      - "src/app/layout.tsx"
+      - "scripts/build_images.py"
+      - "scripts/img_*.sh"
+      - ".zscripts/build.sh"
+      - ".zscripts/database-runtime-build.sh"
+      - ".zscripts/dev.sh"
+      - ".zscripts/mini-services-build.sh"
+      - ".zscripts/mini-services-install.sh"
+      - ".zscripts/mini-services-start.sh"
+      - ".zscripts/python-runtime-build.sh"
+      - ".zscripts/start.sh"
+      - "tests/database-runtime-build.sh"
+      - "src/components/admin/AdminView.tsx"
+      - ".project-memory/STATE.md"
+      - ".project-memory/SUCCESSES.md"
       - ".dexty/temp-memory-projet.md"
     constraints:
-      - "Intégrité cryptographique SHA-256 des skills"
-      - "Zéro conflit entre .dexty et .project-memory"
-      - "Conservation de la stack et des règles Nexus Partners"
+      - "Ne casser aucun script ni processus de build Next.js"
+      - "Zéro caractère chinois restant dans les fichiers de code et scripts"
+      - "Valider le linter ESLint et le build Next.js"
 
   future:
     known_tasks:
-      - id: "TASK-003-CATALOG-DATA-MODEL"
+      - id: "TASK-004-CATALOG-DATA-MODEL"
         objective: "Évolution du schéma Prisma SQLite pour le catalogue e-commerce Maison Cauris (Produits, Variantes, Commandes, Panier)"
-        dependency: "TASK-002-MERGE-DEXTY-AGENT-SKILLS"
+        dependency: "TASK-003-PURGE-AND-FRENCH-TRANSLATION"
         status: "READY"
 
   cross_branch:
@@ -88,14 +98,17 @@ task_context:
 
   temporary_memory:
     facts:
-      - "Hop-Syder/Dexty-agent-skills-2026 installé avec succès dans NEWLAND."
-      - "Onboarding exécuté pour Maison Cauris : 24 skills sélectionnés et verrouillés."
-      - "Les 8 fiches d'agents sont disponibles sous agents/ et prêtes à être appelées."
+      - "Dépendance 'z-ai-web-dev-sdk' retirée de package.json."
+      - "Scripts résiduels scripts/build_images.py et scripts/img_*.sh supprimés."
+      - "Logo public/logo.svg redessiné avec un cauris doré stylisé sur fond noir avec bordure or."
+      - "Favicon layout.tsx basculé sur le logo local /logo.svg au lieu de l'URL CDN chatglm."
+      - "Tous les scripts de .zscripts/ et tests/ traduits en français avec signatures Nexus Partners."
+      - "Erreur ESLint dans AdminView.tsx résolue (useMemo sur orders.filter)."
+      - "Build standalone Next.js exécuté avec succès (13.6s de compilation)."
     decisions:
-      - "Unification de la mémoire DEXTY (.dexty/temp-memory-projet.md) et de la mémoire persistante Dexty 3.5.1 (.project-memory/)."
-      - "Toutes les règles et verrouillages SHA-256 sont opérationnels."
+      - "Purge totale des artefacts externes de l'ancien générateur tiers."
     discoveries:
-      - "Le projet est une boutique e-commerce Maison Cauris intégrée avec composants shop et admin déjà bien avancés."
+      - "Le projet est désormais 100% propre, autonome et francisé."
     blockers: []
     pending_actions: []
 ```
@@ -117,10 +130,6 @@ task_context:
 
 ---
 
-## 4. SKILLS VERROUILLÉS (24/24 Vérifiés SHA-256)
-- `idea-refine`, `spec-driven-development`, `planning-and-task-breakdown`, `documentation-and-adrs`
-- `frontend-ui-engineering`, `frontend-design`, `no-ai-design-slop`, `build-awwwards-quality-sites`
-- `security-and-hardening`, `security-threat-model`, `security-best-practices`, `differential-review`, `security-awareness`
-- `incremental-implementation`, `requesting-code-review`, `react-best-practices`, `composition-patterns`
-- `context-engineering`, `doubt-driven-development`, `dispatching-parallel-agents`, `subagent-driven-development`
-- `observability-and-instrumentation`, `vercel-deploy`, `postgres-best-practices`
+## 4. SCHÉMAS & DONNÉES
+- Base : SQLite (`db/custom.db`)
+- Modèles Prisma : `User`, `Post`
