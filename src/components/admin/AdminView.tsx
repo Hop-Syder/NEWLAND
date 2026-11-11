@@ -566,46 +566,79 @@ function DashboardTab({ onGoProducts }: { onGoProducts: () => void }) {
         {/* Alertes stock */}
         <section
           aria-label="Alertes de stock"
-          className="rounded-md border border-[#2a2a2a] bg-[#161616] p-5 lg:col-span-2"
+          className="flex flex-col justify-between rounded-md border border-[#2a2a2a] bg-[#161616] p-5 lg:col-span-2"
         >
-          <h2 className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide text-[#a3a3a3]">
-            <AlertTriangle
-              className="h-4 w-4 text-[#fca5a5]"
-              aria-hidden="true"
-            />
-            Stocks faibles
-          </h2>
-          {lowStock.length === 0 ? (
-            <p className="mt-4 text-sm text-[#a3a3a3]">
-              Aucun produit sous le seuil. Tout va bien !
-            </p>
-          ) : (
-            <ul className="mt-4 grid gap-2.5">
-              {lowStock.slice(0, 5).map((p) => (
-                <li
-                  key={p.id}
-                  className="flex items-center justify-between gap-3 rounded-md border border-[#2a2a2a] bg-[#0b0b0b] px-3 py-2.5"
-                >
-                  <span className="min-w-0 flex-1 truncate text-sm font-bold">
-                    {p.name}
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className="shrink-0 rounded-md border-[#f87171]/40 bg-[#f87171]/10 text-[#fca5a5]"
-                  >
-                    {stock[p.id] ?? 0} en stock
-                  </Badge>
-                </li>
-              ))}
-            </ul>
-          )}
+          <div>
+            <div className="flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide text-[#a3a3a3]">
+                <AlertTriangle
+                  className="h-4 w-4 text-[#fca5a5]"
+                  aria-hidden="true"
+                />
+                Stocks faibles
+              </h2>
+              {lowStock.length > 0 && (
+                <span className="rounded-full bg-[#f87171]/15 px-2.5 py-0.5 text-xs font-extrabold text-[#fca5a5]">
+                  {lowStock.length} alerte{lowStock.length > 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+
+            {lowStock.length === 0 ? (
+              <div className="mt-6 flex flex-col items-center justify-center py-6 text-center">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
+                  ✓
+                </span>
+                <p className="mt-2 text-sm font-bold text-[#c9c9c9]">
+                  Tous les stocks sont à niveau
+                </p>
+                <p className="text-xs text-[#a3a3a3]">
+                  Aucun produit sous le seuil critique (≤ 3).
+                </p>
+              </div>
+            ) : (
+              <div className="nice-scroll mt-4 max-h-64 overflow-y-auto pr-1">
+                <ul className="grid gap-2">
+                  {lowStock.map((p) => {
+                    const qty = stock[p.id] ?? 0;
+                    return (
+                      <li
+                        key={p.id}
+                        className="flex items-center justify-between gap-3 rounded-md border border-[#2a2a2a] bg-[#0b0b0b] p-2.5 transition-colors hover:border-[#d4af37]/40"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-[#f5f2e9]">
+                            {p.name}
+                          </p>
+                          <p className="text-[11px] text-[#a3a3a3]">
+                            Réf. {p.id} · {formatFCFA(p.price)}
+                          </p>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={`shrink-0 rounded-md font-extrabold ${
+                            qty === 0
+                              ? "border-red-500/60 bg-red-500/20 text-red-300"
+                              : "border-[#f87171]/40 bg-[#f87171]/10 text-[#fca5a5]"
+                          }`}
+                        >
+                          {qty === 0 ? "Rupture" : `${qty} en stock`}
+                        </Badge>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </div>
+
           <Button
             size="sm"
             variant="outline"
-            className="mt-4 rounded-md border-[#d4af37]/50 bg-transparent font-bold text-[#d4af37] hover:bg-[#d4af37]/10"
+            className="mt-4 w-full rounded-md border-[#d4af37]/50 bg-transparent font-bold text-[#d4af37] hover:bg-[#d4af37]/10 sm:w-auto"
             onClick={onGoProducts}
           >
-            Gérer les produits
+            Ajuster et réapprovisionner ({lowStock.length})
           </Button>
         </section>
       </div>

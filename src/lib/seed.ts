@@ -327,7 +327,7 @@ function isoDaysAgo(days: number, hour: number): string {
 
 function makeSeedOrderId(i: number): string {
   const bases = [48213, 48367, 48402, 48477, 48510, 48589, 48634, 48690, 48745, 48801, 48856, 48902, 48947];
-  return `MC-${bases[i % bases.length]}`;
+  return `NL-${bases[i % bases.length]}`;
 }
 
 /** Construit les commandes de démo complètes (montants calculés, pas copiés). */

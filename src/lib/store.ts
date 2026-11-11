@@ -694,10 +694,10 @@ export const useShop = create<ShopState>()(
   )
 );
 
-/** Numéro de commande lisible — ex. MC-48213. */
+/** Numéro de commande lisible — ex. NL-48213 (NEWLAND). */
 function makeOrderId(): string {
   const n = Math.floor(10000 + Math.random() * 89999);
-  return `MC-${n}`;
+  return `NL-${n}`;
 }
 
 /** Total du panier en FCFA (hors frais de livraison) — utilise le catalogue

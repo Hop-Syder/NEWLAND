@@ -18,7 +18,6 @@ import {
 import {
   Home,
   LayoutGrid,
-  Search,
   UserRound,
   ShoppingBasket,
   type LucideIcon,
@@ -33,7 +32,6 @@ const SPRING: Transition = { type: "spring", stiffness: 500, damping: 24 };
 const ICON_ANIMS: Record<string, Record<string, number[]>> = {
   home: { rotate: [0, -14, 10, 0], scale: [1, 1.25, 0.95, 1] },
   catalog: { scale: [1, 0.65, 1.2, 1], rotate: [0, 8, -8, 0] },
-  search: { rotate: [0, 22, -16, 0], x: [0, 3, -3, 0] },
   account: { y: [0, -6, 0], scale: [1, 1.15, 1] },
   cart: { rotate: [0, 14, -12, 0], y: [0, -3, 0] },
 };
@@ -153,21 +151,6 @@ export function MobileDock() {
       icon: LayoutGrid,
       active: view === "catalog" || view === "product",
       onActivate: () => openCatalog("all"),
-    },
-    {
-      id: "search",
-      label: "Chercher",
-      icon: Search,
-      active: false,
-      onActivate: () => {
-        openCatalog("all");
-        // Le champ de recherche du catalogue reçoit le focus après montage.
-        window.setTimeout(
-          () =>
-            (document.getElementById("filter-search") as HTMLInputElement | null)?.focus(),
-          reducedMotion ? 60 : 180,
-        );
-      },
     },
     {
       id: "account",

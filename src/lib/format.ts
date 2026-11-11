@@ -15,8 +15,8 @@ export function formatDateLong(d: Date): string {
   }).format(d);
 }
 
-/** Génère un numéro de commande lisible, ex. MC-48213. */
+/** Génère un numéro de commande lisible, ex. NL-48213 (NEWLAND). */
 export function makeOrderId(): string {
   const n = Math.floor(10000 + Math.random() * 89999);
-  return `MC-${n}`;
+  return `NL-${n}`;
 }

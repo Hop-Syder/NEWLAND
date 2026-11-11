@@ -53,17 +53,20 @@ task_context:
       - "Cohérence de marque NEWLAND ELECTRO."
 
   current:
-    id: "TASK-004-MOBILE-CATALOG-ERGONOMICS"
-    objective: "Intégration totale des filtres mobiles dans le tiroir moderne (Sheet) : catégories et étiquettes intégrées, écran mobile épuré au maximum avec accès immédiat à la grille de produits"
+    id: "TASK-005-ADMIN-DASHBOARD-LOW-STOCK-REDESIGN"
+    objective: "Mise à niveau complète de l'administration : préfixes de commandes NL- (NEWLAND), refonte visuelle du bloc Stocks Faibles avec badge d'alerte, défilement dédié et différenciation rupture vs alerte"
     branch: "main"
     status: "COMPLETED"
     files_in_scope:
-      - "src/components/shop/CatalogView.tsx"
+      - "src/components/admin/AdminView.tsx"
+      - "src/lib/format.ts"
+      - "src/lib/seed.ts"
+      - "src/lib/store.ts"
       - ".dexty/temp-memory-projet.md"
     constraints:
-      - "Zéro encombrement sur mobile (seule la barre compacte de 45px subsiste au-dessus des produits)"
-      - "Intégration des catégories et des tags dans la Bottom Sheet"
-      - "Préservation intégrale de la vue desktop"
+      - "Préfixe NL- pour NEWLAND ELECTRO"
+      - "Design sombre épuré, scroll personnalisé pour les stocks faibles"
+      - "Validation ESLint 100% OK"
 
   future:
     known_tasks:
